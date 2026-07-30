@@ -12,9 +12,17 @@ public class ChurchRequest {
     @NotBlank(message = "Email is required")
     private String email;
 
+    @NotBlank(message = "Phone is required")
     private String phone;
 
+    @NotBlank(message = "Address is required")
     private String address;
+
+    @NotBlank(message = "CNPJ is required")
+    private String cnpj;
+
+    @NotBlank(message = "Principal Pastor is required")
+    private String principalPastor;
 
     public ChurchRequest() {
     }
@@ -49,5 +57,21 @@ public class ChurchRequest {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getCnpj() {
+        return cnpj;
+    }
+
+    public void setCnpj(String cnpj) {
+        this.cnpj = cnpj;
+    }
+
+    public String getPrincipalPastor() {
+        return principalPastor;
+    }
+
+    public void setPrincipalPastor(String principalPastor) {
+        this.principalPastor = principalPastor;
     }
 }

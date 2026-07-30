@@ -1,6 +1,13 @@
 package com.obysoft.faithOS.entity;
 
-import jakarta.persistence.*;
+import java.util.List;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "churches")
@@ -17,6 +24,13 @@ public class Church {
     private String phone;
 
     private String address;
+
+    private String cnpj;
+
+    private String principalPastor;
+
+    @OneToMany(mappedBy = "church")
+    private List<User> users;
 
     public Church() {
     }
@@ -55,5 +69,29 @@ public class Church {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getCnpj() {
+        return cnpj;
+    }
+
+    public void setCnpj(String cnpj) {
+        this.cnpj = cnpj;
+    }
+
+    public String getPrincipalPastor() {
+        return principalPastor;
+    }
+
+    public void setPrincipalPastor(String principalPastor) {
+        this.principalPastor = principalPastor;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
     }
 }
