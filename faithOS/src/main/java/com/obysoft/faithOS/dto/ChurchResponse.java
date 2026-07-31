@@ -1,5 +1,11 @@
 package com.obysoft.faithOS.dto;
 
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.obysoft.faithOS.entity.Church;
+
 public class ChurchResponse {
 
     private Long id;
@@ -68,4 +74,17 @@ public class ChurchResponse {
     public void setPrincipalPastor(String principalPastor) {
         this.principalPastor = principalPastor;
     }
+
+
+
+    
+    public interface ChurchRepository extends JpaRepository<Church, Long> {
+    
+        Optional<Church> findByEmail(String email);
+    
+        Optional<Church> findByCnpj(String cnpj);
+    
+    }
+
+
 }

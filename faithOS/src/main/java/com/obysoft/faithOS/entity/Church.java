@@ -28,6 +28,7 @@ public class Church {
     private String cnpj;
 
     private String principalPastor;
+    
 
     @OneToMany(mappedBy = "church")
     private List<User> users;
@@ -93,5 +94,13 @@ public class Church {
 
     public void setUsers(List<User> users) {
         this.users = users;
+    }
+
+    public List<User> getMembers() {
+        return users;
+    }
+
+    public void setMembers(List<User> members) {
+        this.users = members;
     }
 }

@@ -37,9 +37,19 @@ public class ChurchService {
         church.setCnpj(request.getCnpj());
         church.setPrincipalPastor(request.getPrincipalPastor());
 
+         if (churchRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already registered.");
+        }
+
+        if (churchRepository.findByCnpj(request.getCnpj()).isPresent()) {
+            throw new RuntimeException("CNPJ already registered.");
+        }
+
         Church savedChurch = churchRepository.save(church);
 
         return toResponse(savedChurch);
+
+       
     }
 
     public ChurchResponse getChurchById(Long id) {
@@ -64,4 +74,38 @@ public class ChurchService {
 
         return response;
     }
+
+    public List<ChurchResponse> getAllChurches() {
+
+        return churchRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public ChurchResponse updateChurch(Long id, ChurchRequest request) {
+
+        Church church = churchRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Church not found"));
+
+        church.setName(request.getName());
+        church.setEmail(request.getEmail());
+        church.setPhone(request.getPhone());
+        church.setAddress(request.getAddress());
+        church.setCnpj(request.getCnpj());
+        church.setPrincipalPastor(request.getPrincipalPastor());
+
+        Church updated = churchRepository.save(church);
+
+        return toResponse(updated);
+    }
+
+    public void deleteChurch(Long id) {
+
+        Church church = churchRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Church not found"));
+
+        churchRepository.delete(church);
+    }
+
 }
