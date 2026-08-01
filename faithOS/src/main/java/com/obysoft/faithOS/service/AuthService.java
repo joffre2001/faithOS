@@ -6,17 +6,21 @@ import org.springframework.stereotype.Service;
 import com.obysoft.faithOS.dto.LoginRequest;
 import com.obysoft.faithOS.dto.LoginResponse;
 import com.obysoft.faithOS.repository.UserRepository;
+import com.obysoft.faithOS.security.JwtService;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -35,7 +39,7 @@ public class AuthService {
         response.setEmail(user.getEmail());
         response.setRole(user.getRole().name());
         response.setMessage("Login successful.");
-
+        response.setToken(jwtService.generateToken(user));
         return response;
     }
 }
