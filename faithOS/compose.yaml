@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: faithOS_postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: faithos
+      POSTGRES_USER: faithos_user
+      POSTGRES_PASSWORD: faithos_password
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - faithOS_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U faithos_user -d faithOS"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  faithOS_postgres_data:

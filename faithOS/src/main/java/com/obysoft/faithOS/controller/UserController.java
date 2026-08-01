@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.obysoft.faithOS.dto.UserRequest;
 import com.obysoft.faithOS.dto.UserResponse;
-import com.obysoft.faithOS.entity.User;
 import com.obysoft.faithOS.service.UserService;
 
 import jakarta.validation.Valid;
@@ -39,8 +38,7 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> findAll() {
-        return ResponseEntity.ok(userService.findAll());
-    }
-
+public ResponseEntity<List<UserResponse>> findAll() {
+    return ResponseEntity.ok(userService.findAll());
+}
 }

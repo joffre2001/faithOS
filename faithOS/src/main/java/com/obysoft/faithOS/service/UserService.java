@@ -2,6 +2,7 @@ package com.obysoft.faithOS.service;
 
 import java.util.List;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.obysoft.faithOS.dto.UserRequest;
@@ -16,11 +17,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ChurchRepository churchRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository,
-                       ChurchRepository churchRepository) {
+    public UserService(
+            UserRepository userRepository,
+            ChurchRepository churchRepository,
+            PasswordEncoder passwordEncoder) {
+
         this.userRepository = userRepository;
         this.churchRepository = churchRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserResponse createUser(UserRequest request) {
@@ -37,28 +43,39 @@ public class UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword()); // We'll encrypt this later
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhone(request.getPhone());
         user.setRole(request.getRole());
         user.setChurch(church);
 
         User savedUser = userRepository.save(user);
 
-        UserResponse response = new UserResponse();
-
-        response.setId(savedUser.getId());
-        response.setFirstName(savedUser.getFirstName());
-        response.setLastName(savedUser.getLastName());
-        response.setEmail(savedUser.getEmail());
-        response.setPhone(savedUser.getPhone());
-        response.setRole(savedUser.getRole());
-        response.setActive(savedUser.getActive());
-        response.setChurchName(savedUser.getChurch().getName());
-
-        return response;
+        return toResponse(savedUser);
     }
 
-    public List<User> findAll() {
-        return userRepository.findAll();
+    public List<UserResponse> findAll() {
+        return userRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    private UserResponse toResponse(User user) {
+
+        UserResponse response = new UserResponse();
+
+        response.setId(user.getId());
+        response.setFirstName(user.getFirstName());
+        response.setLastName(user.getLastName());
+        response.setEmail(user.getEmail());
+        response.setPhone(user.getPhone());
+        response.setRole(user.getRole());
+        response.setActive(user.getActive());
+
+        if (user.getChurch() != null) {
+            response.setChurchName(user.getChurch().getName());
+        }
+
+        return response;
     }
 }
