@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import com.obysoft.faithOS.dto.LoginRequest;
 import com.obysoft.faithOS.dto.LoginResponse;
+import com.obysoft.faithOS.exception.InvalidCredentialsException;
 import com.obysoft.faithOS.repository.UserRepository;
 import com.obysoft.faithOS.security.JwtService;
 
@@ -16,8 +17,8 @@ public class AuthService {
     private final JwtService jwtService;
 
     public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -26,10 +27,19 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
 
         var user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found."));
+                .orElseThrow(()
+                        -> new InvalidCredentialsException(
+                        "Invalid email or password."
+                )
+                );
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials.");
+        if (!passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword())) {
+
+            throw new InvalidCredentialsException(
+                    "Invalid email or password."
+            );
         }
 
         LoginResponse response = new LoginResponse();

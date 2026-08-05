@@ -2,13 +2,18 @@ package com.obysoft.faithOS.service;
 
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.obysoft.faithOS.dto.UserRequest;
 import com.obysoft.faithOS.dto.UserResponse;
 import com.obysoft.faithOS.entity.Church;
+import com.obysoft.faithOS.entity.Role;
 import com.obysoft.faithOS.entity.User;
+import com.obysoft.faithOS.exception.DuplicateResourceException;
+import com.obysoft.faithOS.exception.ResourceNotFoundException;
 import com.obysoft.faithOS.repository.ChurchRepository;
 import com.obysoft.faithOS.repository.UserRepository;
 
@@ -32,11 +37,15 @@ public class UserService {
     public UserResponse createUser(UserRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists.");
+            throw new DuplicateResourceException("Email already exists.");
         }
 
         Church church = churchRepository.findById(request.getChurchId())
-                .orElseThrow(() -> new RuntimeException("Church not found."));
+                .orElseThrow(()
+                        -> new ResourceNotFoundException(
+                        "Church not found with id: " + request.getChurchId()
+                )
+                );
 
         User user = new User();
 
@@ -54,8 +63,28 @@ public class UserService {
     }
 
     public List<UserResponse> findAll() {
-        return userRepository.findAll()
-                .stream()
+
+        Authentication authentication
+                = SecurityContextHolder.getContext().getAuthentication();
+
+        String authenticatedEmail = authentication.getName();
+
+        User authenticatedUser = userRepository.findByEmail(authenticatedEmail)
+                .orElseThrow(()
+                        -> new ResourceNotFoundException("Authenticated user not found.")
+                );
+
+        List<User> users;
+
+        if (authenticatedUser.getRole() == Role.SUPER_ADMIN) {
+            users = userRepository.findAll();
+        } else {
+            users = userRepository.findAllByChurchId(
+                    authenticatedUser.getChurch().getId()
+            );
+        }
+
+        return users.stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -77,5 +106,22 @@ public class UserService {
         }
 
         return response;
+    }
+
+    public UserResponse getCurrentUser() {
+
+        Authentication authentication
+                = SecurityContextHolder.getContext().getAuthentication();
+
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(()
+                        -> new ResourceNotFoundException(
+                        "Authenticated user not found."
+                )
+                );
+
+        return toResponse(user);
     }
 }
