@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+
+import com.obysoft.faithOS.dto.UserUpdateRequest;
+
 import com.obysoft.faithOS.dto.UserRequest;
 import com.obysoft.faithOS.dto.UserResponse;
 import com.obysoft.faithOS.service.UserService;
@@ -30,7 +36,7 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'CHURCH_ADMIN')")
+   // @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'CHURCH_ADMIN')")
     public ResponseEntity<UserResponse> createUser(
             @Valid @RequestBody UserRequest request) {
 
@@ -48,5 +54,24 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser() {
         return ResponseEntity.ok(userService.getCurrentUser());
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'CHURCH_ADMIN')")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UserUpdateRequest request) {
+
+        return ResponseEntity.ok(
+                userService.updateUser(id, request));
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'CHURCH_ADMIN')")
+    public ResponseEntity<UserResponse> deactivateUser(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                userService.deactivateUser(id));
     }
 }

@@ -16,7 +16,7 @@ services:
       - faithOS_postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U faithos_user -d faithOS"]
+      test: ["CMD-SHELL", "pg_isready -U faithos_user -d faithos"]
       interval: 10s
       timeout: 5s
       retries: 5
