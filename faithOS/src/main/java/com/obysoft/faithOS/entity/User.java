@@ -61,6 +61,9 @@ public class User {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Column(nullable = false)
+    private Boolean mustChangePassword = false;
+
     public User() {
     }
 
@@ -111,6 +114,10 @@ public class User {
     public void setActive(Boolean active) {
         this.active = active;
     }
+
+    public Boolean getMustChangePassword() { return mustChangePassword; }
+
+    public void setMustChangePassword(Boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
 
     @ManyToOne
     @JoinColumn(name = "church_id", nullable = false)

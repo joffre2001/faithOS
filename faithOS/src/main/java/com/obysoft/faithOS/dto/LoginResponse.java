@@ -10,6 +10,7 @@ public class LoginResponse {
     private String token;
     private Long churchId;
     private String churchName;
+    private Boolean mustChangePassword;
 
     public LoginResponse() {
     }
@@ -67,4 +68,6 @@ public class LoginResponse {
     public void setChurchId(Long churchId) { this.churchId = churchId; }
     public String getChurchName() { return churchName; }
     public void setChurchName(String churchName) { this.churchName = churchName; }
+    public Boolean getMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(Boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
 }

@@ -1,7 +1,7 @@
 package com.obysoft.faithOS.service;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -82,29 +82,34 @@ public class UserService {
         user.setPhone(request.getPhone());
         user.setRole(request.getRole());
         user.setChurch(church);
+        user.setMustChangePassword(true);
 
         User savedUser = userRepository.save(user);
 
         return toResponse(savedUser);
     }
 
-    public List<UserResponse> findAll() {
+    public Page<UserResponse> findAll(Pageable pageable, String search) {
 
         User authenticatedUser = getAuthenticatedUser();
 
-        List<User> users;
+        String query = search == null ? "" : search.trim();
+        Page<User> users;
 
         if (authenticatedUser.getRole() == Role.SUPER_ADMIN) {
-            users = userRepository.findAll();
+            users = query.isEmpty()
+                    ? userRepository.findAll(pageable)
+                    : userRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+                            query, query, query, pageable);
         } else {
-            users = userRepository.findAllByChurchId(
-                    authenticatedUser.getChurch().getId()
-            );
+            Long churchId = authenticatedUser.getChurch().getId();
+            users = query.isEmpty()
+                    ? userRepository.findAllByChurchId(churchId, pageable)
+                    : userRepository.findByChurchIdAndFirstNameContainingIgnoreCaseOrChurchIdAndLastNameContainingIgnoreCaseOrChurchIdAndEmailContainingIgnoreCase(
+                            churchId, query, churchId, query, churchId, query, pageable);
         }
 
-        return users.stream()
-                .map(this::toResponse)
-                .toList();
+        return users.map(this::toResponse);
     }
 
     public UserResponse updateUser(
@@ -231,6 +236,7 @@ public class UserService {
         response.setPhone(user.getPhone());
         response.setRole(user.getRole());
         response.setActive(user.getActive());
+        response.setMustChangePassword(user.getMustChangePassword());
 
         if (user.getChurch() != null) {
             response.setChurchName(

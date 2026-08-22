@@ -18,6 +18,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 import com.obysoft.faithOS.security.JwtAuthenticationFilter;
+import com.obysoft.faithOS.security.PasswordChangeRequiredFilter;
 
 @Configuration
 @EnableMethodSecurity
@@ -25,9 +26,11 @@ import com.obysoft.faithOS.security.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final PasswordChangeRequiredFilter passwordChangeRequiredFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, PasswordChangeRequiredFilter passwordChangeRequiredFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.passwordChangeRequiredFilter = passwordChangeRequiredFilter;
     }
 
     @Bean
@@ -47,12 +50,13 @@ public class SecurityConfig {
             throws Exception {
 
         return http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.spa())
                 .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/session", "/api/auth/change-password").authenticated()
                 .requestMatchers("/api/auth/**", "/api/setup/**", "/actuator/health").permitAll()
                 .anyRequest().authenticated()
                 )
@@ -60,6 +64,7 @@ public class SecurityConfig {
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
+                .addFilterAfter(passwordChangeRequiredFilter, JwtAuthenticationFilter.class)
                 .build();
     }
 
@@ -68,7 +73,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-XSRF-TOKEN"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

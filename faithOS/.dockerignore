@@ -1,0 +1,10 @@
+target
+.git
+.github
+.idea
+.vscode
+.m2
+.env*
+uploads
+frontend
+*.log

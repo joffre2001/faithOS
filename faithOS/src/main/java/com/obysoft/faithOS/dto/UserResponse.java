@@ -12,6 +12,7 @@ public class UserResponse {
     private Role role;
     private Boolean active;
     private String churchName;
+    private Boolean mustChangePassword;
 
     public UserResponse() {
     }
@@ -79,4 +80,7 @@ public class UserResponse {
     public void setChurchName(String churchName) {
         this.churchName = churchName;
     }
+
+    public Boolean getMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(Boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
 }

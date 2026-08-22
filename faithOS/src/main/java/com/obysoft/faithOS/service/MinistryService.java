@@ -1,14 +1,15 @@
 package com.obysoft.faithOS.service;
-import java.util.List; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
-import com.obysoft.faithOS.dto.*; import com.obysoft.faithOS.entity.*; import com.obysoft.faithOS.exception.*; import com.obysoft.faithOS.repository.MinistryRepository;
+import java.util.LinkedHashSet; import java.util.List; import java.util.Set; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
+import com.obysoft.faithOS.dto.*; import com.obysoft.faithOS.entity.*; import com.obysoft.faithOS.exception.*; import com.obysoft.faithOS.repository.MinistryRepository; import com.obysoft.faithOS.repository.UserRepository;
 @Service public class MinistryService{
- private final MinistryRepository repository;private final CurrentChurchService current;
- public MinistryService(MinistryRepository repository,CurrentChurchService current){this.repository=repository;this.current=current;}
- public List<MinistryResponse> all(){Long id=current.church().getId();return repository.findAllByChurchIdOrderByName(id).stream().map(this::response).toList();}
+ private final MinistryRepository repository;private final UserRepository users;private final CurrentChurchService current;
+ public MinistryService(MinistryRepository repository,UserRepository users,CurrentChurchService current){this.repository=repository;this.users=users;this.current=current;}
+ @Transactional(readOnly=true) public List<MinistryResponse> all(){Long id=current.church().getId();return repository.findAllByChurchIdOrderByName(id).stream().map(this::response).toList();}
  @Transactional public MinistryResponse create(MinistryRequest r){Church c=current.church();if(repository.existsByNameIgnoreCaseAndChurchId(r.name(),c.getId()))throw new DuplicateResourceException("A ministry with this name already exists.");Ministry m=new Ministry();apply(m,r);m.setChurch(c);return response(repository.save(m));}
  @Transactional public MinistryResponse update(Long id,MinistryRequest r){Ministry m=find(id);apply(m,r);return response(repository.save(m));}
  @Transactional public void delete(Long id){repository.delete(find(id));}
  private Ministry find(Long id){return repository.findByIdAndChurchId(id,current.church().getId()).orElseThrow(()->new ResourceNotFoundException("Ministry not found."));}
- private void apply(Ministry m,MinistryRequest r){m.setName(r.name().trim());m.setDescription(r.description());m.setLeaderName(r.leaderName());m.setActive(r.active()==null?true:r.active());}
- private MinistryResponse response(Ministry m){return new MinistryResponse(m.getId(),m.getName(),m.getDescription(),m.getLeaderName(),m.getActive());}
+ private void apply(Ministry m,MinistryRequest r){m.setName(r.name().trim());m.setDescription(r.description());m.setLeader(r.leaderId()==null?null:users.findByIdAndChurchId(r.leaderId(),current.church().getId()).orElseThrow(()->new ResourceNotFoundException("Leader not found in your church.")));m.setLeaderName(null);if(r.memberIds()!=null)m.setMembers(resolveMembers(r.memberIds()));m.setActive(r.active()==null?true:r.active());}
+ private Set<User> resolveMembers(Set<Long> ids){if(ids.isEmpty())return new LinkedHashSet<>();List<User> found=users.findAllByIdInAndChurchId(ids,current.church().getId());if(found.size()!=ids.size())throw new ResourceNotFoundException("One or more ministry members were not found in your church.");return new LinkedHashSet<>(found);}
+ private MinistryResponse response(Ministry m){User leader=m.getLeader();String name=leader==null?m.getLeaderName():leader.getFirstName()+" "+leader.getLastName();List<MinistryMemberResponse> members=m.getMembers().stream().sorted((a,b)->(a.getFirstName()+a.getLastName()).compareToIgnoreCase(b.getFirstName()+b.getLastName())).map(u->new MinistryMemberResponse(u.getId(),u.getFirstName(),u.getLastName(),u.getEmail())).toList();return new MinistryResponse(m.getId(),m.getName(),m.getDescription(),leader==null?null:leader.getId(),name,members,m.getActive());}
 }

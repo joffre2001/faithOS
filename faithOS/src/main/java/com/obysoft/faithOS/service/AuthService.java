@@ -48,18 +48,46 @@ public class AuthService {
 
         }
 
-        LoginResponse response = new LoginResponse();
+        LoginResponse response = toResponse(user);
+        response.setMessage("Login successful.");
+        response.setToken(jwtService.generateToken(user));
+        return response;
+    }
 
+    public LoginResponse session(String email) {
+        var user = userRepository.findByEmail(email)
+                .filter(candidate -> Boolean.TRUE.equals(candidate.getActive()))
+                .orElseThrow(() -> new InvalidCredentialsException("Session is no longer valid."));
+        LoginResponse response = toResponse(user);
+        response.setMessage("Session active.");
+        return response;
+    }
+
+    private LoginResponse toResponse(com.obysoft.faithOS.entity.User user) {
+        LoginResponse response = new LoginResponse();
         response.setId(user.getId());
         response.setFullName(user.getFirstName() + " " + user.getLastName());
         response.setEmail(user.getEmail());
         response.setRole(user.getRole().name());
+        response.setMustChangePassword(user.getMustChangePassword());
         if (user.getChurch() != null) {
             response.setChurchId(user.getChurch().getId());
             response.setChurchName(user.getChurch().getName());
         }
-        response.setMessage("Login successful.");
-        response.setToken(jwtService.generateToken(user));
         return response;
+    }
+
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new InvalidCredentialsException("Authenticated user not found."));
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException("New password must be different from the current password.");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
     }
 }

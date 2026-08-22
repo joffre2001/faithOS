@@ -38,6 +38,7 @@ frontend/node_modules/
 frontend/.npm-cache/
 frontend/dist/
 frontend/*.tsbuildinfo
+uploads/
 
 ### Secrets and local runtime configuration ###
 .env
