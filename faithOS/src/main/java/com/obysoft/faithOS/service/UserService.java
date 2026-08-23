@@ -25,15 +25,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final ChurchRepository churchRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetService passwordResetService;
 
     public UserService(
             UserRepository userRepository,
             ChurchRepository churchRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            PasswordResetService passwordResetService) {
 
         this.userRepository = userRepository;
         this.churchRepository = churchRepository;
         this.passwordEncoder = passwordEncoder;
+        this.passwordResetService = passwordResetService;
     }
 
     public UserResponse createUser(UserRequest request) {
@@ -73,6 +76,11 @@ public class UserService {
 
         User user = new User();
 
+        String cpf = normalizeCpf(request.getCpf());
+        if (userRepository.existsByCpf(cpf)) {
+            throw new DuplicateResourceException("CPF already exists.");
+        }
+
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
@@ -80,6 +88,9 @@ public class UserService {
                 passwordEncoder.encode(request.getPassword())
         );
         user.setPhone(request.getPhone());
+        user.setCpf(cpf);
+        user.setEmergencyContactName(request.getEmergencyContactName().trim());
+        user.setEmergencyContactPhone(request.getEmergencyContactPhone().trim());
         user.setRole(request.getRole());
         user.setChurch(church);
         user.setMustChangePassword(true);
@@ -90,7 +101,6 @@ public class UserService {
     }
 
     public Page<UserResponse> findAll(Pageable pageable, String search) {
-
         User authenticatedUser = getAuthenticatedUser();
 
         String query = search == null ? "" : search.trim();
@@ -150,10 +160,18 @@ public class UserService {
             );
         }
 
+        String cpf = normalizeCpf(request.getCpf());
+        if (userRepository.existsByCpfAndIdNot(cpf, id)) {
+            throw new DuplicateResourceException("CPF already exists.");
+        }
+
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
+        user.setCpf(cpf);
+        user.setEmergencyContactName(request.getEmergencyContactName().trim());
+        user.setEmergencyContactPhone(request.getEmergencyContactPhone().trim());
         user.setRole(request.getRole());
 
         User updatedUser = userRepository.save(user);
@@ -206,6 +224,24 @@ public class UserService {
         return toResponse(updatedUser);
     }
 
+    public void sendInvitation(Long id) {
+        User authenticatedUser = getAuthenticatedUser();
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        if (authenticatedUser.getRole() != Role.SUPER_ADMIN
+                && !authenticatedUser.getChurch().getId().equals(user.getChurch().getId())) {
+            throw new AccessDeniedException("You cannot invite a user from another church.");
+        }
+
+        if (authenticatedUser.getRole() != Role.SUPER_ADMIN && user.getRole() == Role.SUPER_ADMIN) {
+            throw new AccessDeniedException("Only a super administrator can invite this account.");
+        }
+        if (!Boolean.TRUE.equals(user.getActive())) {
+            throw new IllegalArgumentException("Activate this account before sending an invitation.");
+        }
+        passwordResetService.invite(user.getEmail());
+    }
+
     public UserResponse getCurrentUser() {
         return toResponse(getAuthenticatedUser());
     }
@@ -234,6 +270,9 @@ public class UserService {
         response.setLastName(user.getLastName());
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
+        response.setCpf(user.getCpf());
+        response.setEmergencyContactName(user.getEmergencyContactName());
+        response.setEmergencyContactPhone(user.getEmergencyContactPhone());
         response.setRole(user.getRole());
         response.setActive(user.getActive());
         response.setMustChangePassword(user.getMustChangePassword());
@@ -245,5 +284,9 @@ public class UserService {
         }
 
         return response;
+    }
+
+    private String normalizeCpf(String cpf) {
+        return cpf.replaceAll("\\D", "");
     }
 }

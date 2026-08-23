@@ -37,6 +37,15 @@ public class PasswordResetService {
 
     @Transactional
     public void request(String email) {
+        issue(email, false);
+    }
+
+    @Transactional
+    public void invite(String email) {
+        issue(email, true);
+    }
+
+    private void issue(String email, boolean invitation) {
         users.findByEmail(email.trim().toLowerCase()).filter(user -> Boolean.TRUE.equals(user.getActive()))
                 .ifPresent(user -> {
                     tokens.deleteAllByUser(user);
@@ -45,7 +54,7 @@ public class PasswordResetService {
                     reset.setTokenHash(hash(raw)); reset.setUser(user);
                     reset.setExpiresAt(LocalDateTime.now().plusMinutes(30));
                     tokens.save(reset);
-                    send(user.getEmail(), raw);
+                    send(user.getEmail(), raw, invitation);
                 });
     }
 
@@ -72,7 +81,7 @@ public class PasswordResetService {
         } catch (Exception exception) { throw new IllegalStateException("Unable to secure reset token.", exception); }
     }
 
-    private void send(String recipient, String token) {
+    private void send(String recipient, String token, boolean invitation) {
         if (smtpHost.isBlank()) return;
         try {
             Class<?> senderType = Class.forName("org.springframework.mail.javamail.JavaMailSender");
@@ -81,9 +90,12 @@ public class PasswordResetService {
             Object message = messageType.getConstructor().newInstance();
             messageType.getMethod("setFrom", String.class).invoke(message, from);
             messageType.getMethod("setTo", String[].class).invoke(message, (Object) new String[]{recipient});
-            messageType.getMethod("setSubject", String.class).invoke(message, "Your FaithOS password reset code");
+            messageType.getMethod("setSubject", String.class).invoke(message,
+                    invitation ? "You are invited to FaithOS" : "Your FaithOS password reset code");
             messageType.getMethod("setText", String.class).invoke(message,
-                    "Use this code to reset your FaithOS password:\n\n" + token + "\n\nThis code expires in 30 minutes.");
+                    (invitation ? "You have been invited to your church's FaithOS workspace. Use this code to create your password:\n\n"
+                            : "Use this code to reset your FaithOS password:\n\n")
+                            + token + "\n\nThis code expires in 30 minutes.");
             Object messages = java.lang.reflect.Array.newInstance(messageType, 1);
             java.lang.reflect.Array.set(messages, 0, message);
             senderType.getMethod("send", messages.getClass()).invoke(sender, messages);

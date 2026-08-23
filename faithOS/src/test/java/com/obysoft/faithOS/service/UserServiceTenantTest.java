@@ -35,11 +35,12 @@ class UserServiceTenantTest {
     @Mock UserRepository users;
     @Mock ChurchRepository churches;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock PasswordResetService passwordResetService;
     private UserService service;
 
     @BeforeEach
     void setUp() {
-        service = new UserService(users, churches, passwordEncoder);
+        service = new UserService(users, churches, passwordEncoder, passwordResetService);
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken("admin@church.test", "ignored"));
     }
@@ -79,6 +80,34 @@ class UserServiceTenantTest {
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("another church");
         verify(users, never()).save(otherUser);
+    }
+
+    @Test
+    void churchAdministratorCannotInviteAUserFromAnotherChurch() {
+        Church ownChurch = church(10L);
+        Church otherChurch = church(20L);
+        User admin = user(1L, "admin@church.test", Role.CHURCH_ADMIN, ownChurch);
+        User otherUser = user(2L, "member@other.test", Role.MEMBER, otherChurch);
+        when(users.findByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
+        when(users.findById(otherUser.getId())).thenReturn(Optional.of(otherUser));
+
+        assertThatThrownBy(() -> service.sendInvitation(otherUser.getId()))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("another church");
+        verify(passwordResetService, never()).invite(otherUser.getEmail());
+    }
+
+    @Test
+    void churchAdministratorCanInviteAnActiveUserFromTheirChurch() {
+        Church church = church(10L);
+        User admin = user(1L, "admin@church.test", Role.CHURCH_ADMIN, church);
+        User member = user(2L, "member@church.test", Role.MEMBER, church);
+        when(users.findByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
+        when(users.findById(member.getId())).thenReturn(Optional.of(member));
+
+        service.sendInvitation(member.getId());
+
+        verify(passwordResetService).invite(member.getEmail());
     }
 
     private Church church(Long id) {

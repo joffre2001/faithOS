@@ -6,6 +6,7 @@ import com.obysoft.faithOS.dto.*;import com.obysoft.faithOS.entity.*;import com.
  public ContributionService(ContributionRepository repository,CurrentChurchService current){this.repository=repository;this.current=current;}
  public List<ContributionResponse> all(){return repository.findAllByChurchIdOrderByContributionDateDesc(current.church().getId()).stream().map(this::response).toList();}
  @Transactional public ContributionResponse create(ContributionRequest r){Contribution c=new Contribution();apply(c,r);c.setChurch(current.church());return response(repository.save(c));}
+ @Transactional public ContributionResponse createMemberPix(PixDonationRequest r){User user=current.user();Contribution c=new Contribution();c.setDonorName(user.getFirstName()+" "+user.getLastName());c.setAmount(r.amount());c.setContributionDate(java.time.LocalDate.now());c.setType("DONATION");c.setMethod("PIX");c.setNotes(r.notes()==null?null:r.notes().trim());c.setChurch(current.church());return response(repository.save(c));}
  @Transactional public ContributionResponse update(Long id,ContributionRequest r){Contribution c=find(id);apply(c,r);return response(repository.save(c));}
  @Transactional public void delete(Long id){repository.delete(find(id));}
  private Contribution find(Long id){return repository.findByIdAndChurchId(id,current.church().getId()).orElseThrow(()->new ResourceNotFoundException("Contribution not found."));}

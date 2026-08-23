@@ -18,31 +18,36 @@ import org.springframework.web.bind.annotation.RestController;
 import com.obysoft.faithOS.dto.ChurchRequest;
 import com.obysoft.faithOS.dto.ChurchResponse;
 import com.obysoft.faithOS.service.ChurchService;
+import com.obysoft.faithOS.service.CurrentChurchService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/churches")
-@PreAuthorize("hasRole('SUPER_ADMIN')")
 public class ChurchController {
 
     private final ChurchService churchService;
+    private final CurrentChurchService currentChurchService;
 
-    public ChurchController(ChurchService churchService) {
+    public ChurchController(ChurchService churchService, CurrentChurchService currentChurchService) {
         this.churchService = churchService;
+        this.currentChurchService = currentChurchService;
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ChurchResponse getChurchById(@PathVariable Long id) {
         return churchService.getChurchById(id);
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<List<ChurchResponse>> getAllChurches() {
         return ResponseEntity.ok(churchService.findAll());
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ChurchResponse updateChurch(
             @PathVariable Long id,
             @Valid @RequestBody ChurchRequest request) {
@@ -51,17 +56,30 @@ public class ChurchController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteChurch(@PathVariable Long id) {
         churchService.deleteChurch(id);
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ChurchResponse> createChurch(
             @Valid @RequestBody ChurchRequest request) {
 
         ChurchResponse response = churchService.createChurch(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/current")
+    public ChurchResponse currentChurch() {
+        return churchService.getChurchById(currentChurchService.church().getId());
+    }
+
+    @PutMapping("/current")
+    @PreAuthorize("hasRole('CHURCH_ADMIN')")
+    public ChurchResponse updateCurrentChurch(@Valid @RequestBody ChurchRequest request) {
+        return churchService.updateChurch(currentChurchService.church().getId(), request);
     }
 }

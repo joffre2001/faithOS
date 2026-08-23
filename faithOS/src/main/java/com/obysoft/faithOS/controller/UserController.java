@@ -96,4 +96,11 @@ public class UserController {
                 )
         );
     }
+
+    @PostMapping("/{id}/invite")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'CHURCH_ADMIN')")
+    public ResponseEntity<Void> sendInvitation(@PathVariable Long id) {
+        userService.sendInvitation(id);
+        return ResponseEntity.noContent().build();
+    }
 }

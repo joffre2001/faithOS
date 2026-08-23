@@ -1,12 +1,13 @@
-export type Session = { fullName: string; email: string; role: string; churchId?: number; churchName?:string; mustChangePassword?:boolean }
-export type User = { id:number; firstName:string; lastName:string; email:string; phone?:string; role:string; active:boolean; churchName?:string; mustChangePassword?:boolean }
+export type Session = { id:number; fullName: string; email: string; role: string; churchId?: number; churchName?:string; mustChangePassword?:boolean }
+export type User = { id:number; firstName:string; lastName:string; email:string; phone?:string; cpf?:string; emergencyContactName?:string; emergencyContactPhone?:string; role:string; active:boolean; churchName?:string; mustChangePassword?:boolean }
 export type PageResponse<T> = { content:T[]; page:number; size:number; totalElements:number; totalPages:number; first:boolean; last:boolean }
-export type CreateUser = { firstName:string; lastName:string; email:string; password:string; phone:string; role:string; churchId:number }
-export type UpdateUser = { firstName:string; lastName:string; email:string; phone:string; role:string }
+export type CreateUser = { firstName:string; lastName:string; email:string; password:string; phone:string; cpf:string; emergencyContactName:string; emergencyContactPhone:string; role:string; churchId:number }
+export type UpdateUser = { firstName:string; lastName:string; email:string; phone:string; cpf:string; emergencyContactName:string; emergencyContactPhone:string; role:string }
 export type SetupRequest = { churchName:string; firstName:string; lastName:string; email:string; phone:string; password:string }
 export type MinistryMember={id:number;firstName:string;lastName:string;email:string}
 export type Ministry={id:number;name:string;description?:string;leaderId?:number;leaderName?:string;members:MinistryMember[];active:boolean}
 export type MinistryPayload={name:string;description?:string;leaderId?:number;memberIds?:number[];active:boolean}
+export type MinistryMessage={id:number;senderName:string;senderId:number;message?:string;attachmentName?:string;attachmentType?:string;attachmentSize?:number;createdAt:string}
 export type AttendanceSession={id:number;title:string;type:'WORSHIP'|'BIBLE_STUDY';sessionDate:string;attendees:MinistryMember[]}
 export type AttendancePayload={title:string;type:'WORSHIP'|'BIBLE_STUDY';sessionDate:string;attendeeIds:number[]}
 export type AttendanceReport={from:string;to:string;totalSessions:number;totalCheckIns:number;uniqueAttendees:number;averageAttendance:number;sessionsByType:Record<'WORSHIP'|'BIBLE_STUDY',number>;checkInsByType:Record<'WORSHIP'|'BIBLE_STUDY',number>}
@@ -16,14 +17,20 @@ export type Expense={id:number;description:string;amount:number;expenseDate:stri
 export type FinancialReport={from:string;to:string;income:number;expenses:number;netBalance:number;incomeByType:Record<string,number>;expensesByCategory:Record<string,number>}
 export type Notification={id:number;title:string;message:string;type:string;createdAt:string;read:boolean}
 export type ChurchFile={id:number;name:string;contentType?:string;size:number;createdAt:string;uploadedBy?:string}
+export type Church={id:number;name:string;email:string;phone:string;address:string;cnpj:string;principalPastor:string}
+export type ChurchPayload=Omit<Church,'id'>
+export type PixConfiguration={key:string;recipient:string;city:string}
+const API_ROOT=(import.meta.env.VITE_API_URL||'/api').replace(/\/$/,'')
+const apiUrl=(path:string)=>`${API_ROOT}${path}`
 
 async function getCsrfToken(): Promise<string> {
-  const response = await fetch('/api/auth/csrf', { credentials: 'include' })
+  const response = await fetch(apiUrl('/auth/csrf'), { credentials: 'include' })
   if (!response.ok) throw new Error('Unable to initialize request security. Please refresh the page.')
-  await response.json()
+  const csrf = await response.json() as {token?:string}
   const cookie = document.cookie.split('; ').find(value => value.startsWith('XSRF-TOKEN='))
-  if (!cookie) throw new Error('Unable to initialize request security. Please refresh the page.')
-  return decodeURIComponent(cookie.substring('XSRF-TOKEN='.length))
+  if (cookie) return decodeURIComponent(cookie.substring('XSRF-TOKEN='.length))
+  if (csrf.token) return csrf.token
+  throw new Error('Unable to initialize request security. Please refresh the page.')
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -31,7 +38,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const unsafe = !['GET', 'HEAD', 'OPTIONS'].includes(method)
   const execute = async () => {
     const token = unsafe ? await getCsrfToken() : null
-    return fetch(`/api${path}`, {
+    return fetch(apiUrl(path), {
       ...options,
       credentials: 'include',
       headers: {
@@ -68,13 +75,19 @@ export const api = {
   createUser: (user: CreateUser) => request<User>('/users', { method:'POST', body:JSON.stringify(user) }),
   updateUser: (id:number, user:UpdateUser) => request<User>(`/users/${id}`, { method:'PUT', body:JSON.stringify(user) }),
   setUserStatus: (id:number, active:boolean) => request<User>(`/users/${id}/status`, { method:'PATCH', body:JSON.stringify({active}) }),
+  inviteUser: (id:number) => request<void>(`/users/${id}/invite`, { method:'POST' }),
+  submitSupport: (value:{page:string;expected:string;error:string}) => request<void>('/support',{method:'POST',body:JSON.stringify(value)}),
   setupStatus: () => request<{available:boolean}>('/setup/status'),
   setup: (setup:SetupRequest) => request<Session>('/setup', { method:'POST', body:JSON.stringify(setup) }),
   registerChurch: (setup:SetupRequest) => request<Session>('/auth/register-church', { method:'POST', body:JSON.stringify(setup) }),
   ministries:()=>request<Ministry[]>('/ministries'),
   createMinistry:(value:MinistryPayload)=>request<Ministry>('/ministries',{method:'POST',body:JSON.stringify(value)}),
   updateMinistry:(id:number,value:MinistryPayload)=>request<Ministry>(`/ministries/${id}`,{method:'PUT',body:JSON.stringify(value)}),
+  updateMinistryMembers:(id:number,memberIds:number[])=>request<Ministry>(`/ministries/${id}/members`,{method:'PUT',body:JSON.stringify({memberIds})}),
   deleteMinistry:(id:number)=>request<void>(`/ministries/${id}`,{method:'DELETE'}),
+  ministryMessages:(id:number)=>request<MinistryMessage[]>(`/ministries/${id}/messages`),
+  sendMinistryMessage:async(id:number,message:string,file?:File)=>{const body=new FormData();if(message.trim())body.append('message',message.trim());if(file)body.append('file',file);const send=async()=>fetch(apiUrl(`/ministries/${id}/messages`),{method:'POST',credentials:'include',headers:{'X-XSRF-TOKEN':await getCsrfToken()},body});let response=await send();if(response.status===403)response=await send();if(!response.ok){if(response.status===401)window.dispatchEvent(new Event('faithos:session-expired'));const error=await response.json().catch(()=>null);throw new Error(error?.message??'Unable to send message.')}return response.json() as Promise<MinistryMessage>},
+  ministryAttachment:(ministryId:number,messageId:number)=>apiUrl(`/ministries/${ministryId}/messages/${messageId}/attachment`),
   attendance:()=>request<AttendanceSession[]>('/attendance'),
   attendanceReport:(from:string,to:string)=>request<AttendanceReport>(`/attendance/report?from=${from}&to=${to}`),
   createAttendance:(value:AttendancePayload)=>request<AttendanceSession>('/attendance',{method:'POST',body:JSON.stringify(value)}),
@@ -86,6 +99,8 @@ export const api = {
   deleteEvent:(id:number)=>request<void>(`/events/${id}`,{method:'DELETE'}),
   contributions:()=>request<Contribution[]>('/contributions'),
   createContribution:(value:Omit<Contribution,'id'>)=>request<Contribution>('/contributions',{method:'POST',body:JSON.stringify(value)}),
+  pixConfiguration:()=>request<PixConfiguration>('/donations/pix'),
+  recordPixDonation:(amount:number,notes:string)=>request<Contribution>('/donations/pix',{method:'POST',body:JSON.stringify({amount,notes})}),
   updateContribution:(id:number,value:Omit<Contribution,'id'>)=>request<Contribution>(`/contributions/${id}`,{method:'PUT',body:JSON.stringify(value)}),
   deleteContribution:(id:number)=>request<void>(`/contributions/${id}`,{method:'DELETE'}),
   expenses:()=>request<Expense[]>('/expenses'),
@@ -95,10 +110,17 @@ export const api = {
   financialReport:(from:string,to:string)=>request<FinancialReport>(`/finance/report?from=${from}&to=${to}`),
   notifications:()=>request<Notification[]>('/notifications'),
   createNotification:(value:{title:string;message:string;type:string})=>request<Notification>('/notifications',{method:'POST',body:JSON.stringify(value)}),
+  updateNotification:(id:number,value:{title:string;message:string;type:string})=>request<Notification>(`/notifications/${id}`,{method:'PUT',body:JSON.stringify(value)}),
   markNotificationRead:(id:number)=>request<Notification>(`/notifications/${id}/read`,{method:'PATCH'}),
   deleteNotification:(id:number)=>request<void>(`/notifications/${id}`,{method:'DELETE'}),
   files:()=>request<ChurchFile[]>('/files'),
-  uploadFile:async(file:File)=>{const body=new FormData();body.append('file',file);const send=async()=>fetch('/api/files',{method:'POST',credentials:'include',headers:{'X-XSRF-TOKEN':await getCsrfToken()},body});let response=await send();if(response.status===403)response=await send();if(!response.ok){if(response.status===401)window.dispatchEvent(new Event('faithos:session-expired'));const error=await response.json().catch(()=>null);throw new Error(error?.message??'Unable to upload file.')}return response.json() as Promise<ChurchFile>},
-  fileContent:(id:number)=>`/api/files/${id}/content`,
+  uploadFile:async(file:File)=>{const body=new FormData();body.append('file',file);const send=async()=>fetch(apiUrl('/files'),{method:'POST',credentials:'include',headers:{'X-XSRF-TOKEN':await getCsrfToken()},body});let response=await send();if(response.status===403)response=await send();if(!response.ok){if(response.status===401)window.dispatchEvent(new Event('faithos:session-expired'));const error=await response.json().catch(()=>null);throw new Error(error?.message??'Unable to upload file.')}return response.json() as Promise<ChurchFile>},
+  fileContent:(id:number)=>apiUrl(`/files/${id}/content`),
   deleteFile:(id:number)=>request<void>(`/files/${id}`,{method:'DELETE'}),
+  currentChurch:()=>request<Church>('/churches/current'),
+  updateCurrentChurch:(value:ChurchPayload)=>request<Church>('/churches/current',{method:'PUT',body:JSON.stringify(value)}),
+  churches:()=>request<Church[]>('/churches'),
+  createChurch:(value:ChurchPayload)=>request<Church>('/churches',{method:'POST',body:JSON.stringify(value)}),
+  updateChurch:(id:number,value:ChurchPayload)=>request<Church>(`/churches/${id}`,{method:'PUT',body:JSON.stringify(value)}),
+  deleteChurch:(id:number)=>request<void>(`/churches/${id}`,{method:'DELETE'}),
 }

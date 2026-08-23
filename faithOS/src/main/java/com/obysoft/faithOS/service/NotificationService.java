@@ -40,6 +40,16 @@ public class NotificationService {
     }
 
     @Transactional
+    public NotificationResponse update(Long id, NotificationRequest request) {
+        User user = current.user();
+        Notification notification = find(id, user.getChurch().getId());
+        notification.setTitle(request.title().trim());
+        notification.setMessage(request.message().trim());
+        notification.setType(request.type().trim().toUpperCase());
+        return response(repository.save(notification), user);
+    }
+
+    @Transactional
     public NotificationResponse markRead(Long id) {
         User user = current.user();
         Notification notification = find(id, user.getChurch().getId());
