@@ -46,20 +46,6 @@ services:
         value: "365"
       - key: MESSAGE_RETENTION_DAYS
         value: "730"
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USERNAME
-        sync: false
-      - key: SMTP_PASSWORD
-        sync: false
-      - key: SMTP_AUTH
-        value: "true"
-      - key: SMTP_STARTTLS
-        value: "true"
-      - key: MAIL_FROM
-        sync: false
       - key: SUPPORT_EMAIL
         value: obensonjoffre3@gmail.com
       - key: PIX_KEY
