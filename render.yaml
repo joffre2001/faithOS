@@ -5,16 +5,12 @@ services:
     name: faithos-api
     runtime: docker
     region: oregon
-    plan: starter
+    plan: free
     dockerfilePath: ./faithOS/Dockerfile
     dockerContext: ./faithOS
     dockerCommand: /bin/sh -c 'export DB_URL="jdbc:${DATABASE_URL}"; exec java -jar /app/app.jar'
     healthCheckPath: /actuator/health
     autoDeployTrigger: commit
-    disk:
-      name: faithos-uploads
-      mountPath: /app/uploads
-      sizeGB: 5
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -43,7 +39,7 @@ services:
       - key: HIBERNATE_DDL_AUTO
         value: validate
       - key: FILE_UPLOAD_DIR
-        value: /app/uploads
+        value: /tmp/faithos-uploads
       - key: MAX_FILE_SIZE
         value: 10MB
       - key: ABSENCE_RETENTION_DAYS
@@ -73,7 +69,7 @@ services:
     name: faithos-web
     runtime: docker
     region: oregon
-    plan: starter
+    plan: free
     dockerfilePath: ./faithOS/frontend/Dockerfile
     dockerContext: ./faithOS/frontend
     healthCheckPath: /health
@@ -92,10 +88,9 @@ services:
 databases:
   - name: faithos-postgres
     region: oregon
-    plan: basic-256mb
+    plan: free
     postgresMajorVersion: "16"
     databaseName: faithos
     user: faithos
-    diskSizeGB: 15
-    storageAutoscalingEnabled: true
+    diskSizeGB: 1
     ipAllowList: []
