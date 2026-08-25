@@ -10,7 +10,6 @@ services:
     dockerContext: ./faithOS
     dockerCommand: /bin/sh -c 'export DB_URL="jdbc:${DATABASE_URL}"; exec java -jar /app/app.jar'
     healthCheckPath: /actuator/health
-    maxShutdownDelaySeconds: 30
     autoDeployTrigger: commit
     disk:
       name: faithos-uploads
