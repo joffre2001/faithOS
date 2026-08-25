@@ -1,0 +1,1 @@
+package com.obysoft.faithOS.repository;import org.springframework.data.jpa.repository.JpaRepository;import com.obysoft.faithOS.entity.AttendanceDeviceAudit;public interface AttendanceDeviceAuditRepository extends JpaRepository<AttendanceDeviceAudit,Long>{}

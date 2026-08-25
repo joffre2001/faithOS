@@ -1,0 +1,1 @@
+package com.obysoft.faithOS.dto;import java.time.LocalDate;import jakarta.validation.constraints.*;public record AbsenceRequest(@NotNull LocalDate absenceDate,@NotBlank @Size(max=2000)String reason){}

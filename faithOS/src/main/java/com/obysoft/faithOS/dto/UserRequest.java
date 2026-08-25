@@ -29,6 +29,7 @@ public class UserRequest {
     @NotBlank(message = "CPF is required") @Pattern(regexp = "(?:\\d{3}\\.?){3}-?\\d{2}|\\d{11}", message = "CPF must contain 11 digits") @ValidCpf private String cpf;
     @NotBlank(message = "Emergency contact name is required") private String emergencyContactName;
     @NotBlank(message = "Emergency contact phone is required") private String emergencyContactPhone;
+    @NotBlank(message="Member ID is required") @Size(max=50,message="Member ID must contain at most 50 characters") private String memberCode;
 
     @NotNull(message = "Role is required")
     private Role role;
@@ -84,6 +85,7 @@ public class UserRequest {
     public void setEmergencyContactName(String value) { this.emergencyContactName = value; }
     public String getEmergencyContactPhone() { return emergencyContactPhone; }
     public void setEmergencyContactPhone(String value) { this.emergencyContactPhone = value; }
+    public String getMemberCode(){return memberCode;} public void setMemberCode(String value){memberCode=value;}
 
     public Role getRole() {
         return role;

@@ -1,0 +1,1 @@
+package com.obysoft.faithOS.dto;import java.time.LocalDateTime;public record MemberMessageResponse(Long id,Long senderId,String senderName,Long recipientId,String message,String attachmentName,String attachmentType,Long attachmentSize,LocalDateTime createdAt,LocalDateTime readAt){}

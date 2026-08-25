@@ -1,6 +1,7 @@
 package com.obysoft.faithOS.entity;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -33,6 +34,9 @@ public class AttendanceSession {
 
     @Column(name = "session_date", nullable = false)
     private LocalDate sessionDate;
+    @Column(name="opens_at") private LocalTime opensAt;
+    @Column(name="on_time_until") private LocalTime onTimeUntil;
+    @Column(name="closes_at") private LocalTime closesAt;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "church_id", nullable = false)
@@ -51,6 +55,9 @@ public class AttendanceSession {
     public void setType(AttendanceType type) { this.type = type; }
     public LocalDate getSessionDate() { return sessionDate; }
     public void setSessionDate(LocalDate sessionDate) { this.sessionDate = sessionDate; }
+    public LocalTime getOpensAt(){return opensAt;} public void setOpensAt(LocalTime v){opensAt=v;}
+    public LocalTime getOnTimeUntil(){return onTimeUntil;} public void setOnTimeUntil(LocalTime v){onTimeUntil=v;}
+    public LocalTime getClosesAt(){return closesAt;} public void setClosesAt(LocalTime v){closesAt=v;}
     public Church getChurch() { return church; }
     public void setChurch(Church church) { this.church = church; }
     public Set<User> getAttendees() { return attendees; }

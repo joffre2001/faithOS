@@ -1,0 +1,12 @@
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_cpf_key;
+ALTER TABLE users ALTER COLUMN cpf TYPE VARCHAR(512);
+ALTER TABLE users ALTER COLUMN emergency_contact_name TYPE VARCHAR(1024);
+ALTER TABLE users ALTER COLUMN emergency_contact_phone TYPE VARCHAR(512);
+ALTER TABLE users ADD COLUMN cpf_hash VARCHAR(64);
+CREATE UNIQUE INDEX uq_users_cpf_hash ON users(cpf_hash) WHERE cpf_hash IS NOT NULL;
+ALTER TABLE absence_motivations ALTER COLUMN reason TYPE TEXT;
+ALTER TABLE absence_motivations ADD COLUMN expires_at TIMESTAMP;
+ALTER TABLE member_messages ALTER COLUMN message TYPE TEXT;
+ALTER TABLE member_messages ADD COLUMN expires_at TIMESTAMP;
+CREATE INDEX idx_absence_expiry ON absence_motivations(expires_at);
+CREATE INDEX idx_message_expiry ON member_messages(expires_at);

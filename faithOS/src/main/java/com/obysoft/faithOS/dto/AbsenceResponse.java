@@ -1,0 +1,1 @@
+package com.obysoft.faithOS.dto;import java.time.*;public record AbsenceResponse(Long id,Long memberId,String memberName,LocalDate absenceDate,String reason,String status,LocalDateTime createdAt,LocalDateTime reviewedAt){}

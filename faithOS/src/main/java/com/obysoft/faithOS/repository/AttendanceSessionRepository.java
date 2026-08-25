@@ -13,4 +13,5 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     List<AttendanceSession> findAllByChurchIdAndSessionDateBetweenOrderBySessionDateDesc(
             Long churchId, LocalDate from, LocalDate to);
     Optional<AttendanceSession> findByIdAndChurchId(Long id, Long churchId);
+    List<AttendanceSession> findAllByChurchIdAndSessionDateOrderByOpensAtDesc(Long churchId, LocalDate sessionDate);
 }

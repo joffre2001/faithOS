@@ -3,6 +3,7 @@ package com.obysoft.faithOS.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -54,7 +55,9 @@ public class SecurityConfig {
             throws Exception {
 
         return http
-                .csrf(csrf -> csrf.spa())
+                .csrf(csrf -> csrf.spa().ignoringRequestMatchers(request ->
+                        "POST".equals(request.getMethod())
+                                && "/api/device/attendance/check-in".equals(request.getRequestURI())))
                 .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
@@ -62,6 +65,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/session", "/api/auth/change-password").authenticated()
                 .requestMatchers("/api/auth/**", "/api/setup/**", "/actuator/health").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/device/attendance/check-in").permitAll()
                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(

@@ -25,7 +25,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
             Long emailChurchId, String email,
             Pageable pageable);
     boolean existsByEmailAndIdNot(String email, Long id);
-    boolean existsByCpf(String cpf);
-    boolean existsByCpfAndIdNot(String cpf, Long id);
+    boolean existsByCpfHash(String cpfHash);
+    boolean existsByCpfHashAndIdNot(String cpfHash, Long id);
+    boolean existsByChurchIdAndMemberCode(Long churchId,String memberCode);
+    boolean existsByChurchIdAndMemberCodeAndIdNot(Long churchId,String memberCode,Long id);
+    Optional<User> findByChurchIdAndMemberCode(Long churchId,String memberCode);
+    List<User> findAllByChurchIdAndActiveTrueOrderByFirstNameAsc(Long churchId);
 
 }

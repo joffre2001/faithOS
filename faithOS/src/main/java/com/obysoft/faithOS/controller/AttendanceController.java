@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.obysoft.faithOS.dto.AttendanceRequest;
 import com.obysoft.faithOS.dto.AttendanceReportResponse;
 import com.obysoft.faithOS.dto.AttendanceResponse;
+import com.obysoft.faithOS.dto.AttendanceCheckInResponse;
 import com.obysoft.faithOS.service.AttendanceService;
 
 import jakarta.validation.Valid;
@@ -63,4 +64,7 @@ public class AttendanceController {
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }
+
+    @PostMapping("/check-in")
+    public AttendanceCheckInResponse checkIn() { return service.memberCheckIn(); }
 }

@@ -12,6 +12,7 @@ public class UserResponse {
     private String cpf;
     private String emergencyContactName;
     private String emergencyContactPhone;
+    private String memberCode;
     private Role role;
     private Boolean active;
     private String churchName;
@@ -65,6 +66,7 @@ public class UserResponse {
     public void setEmergencyContactName(String value) { this.emergencyContactName = value; }
     public String getEmergencyContactPhone() { return emergencyContactPhone; }
     public void setEmergencyContactPhone(String value) { this.emergencyContactPhone = value; }
+    public String getMemberCode(){return memberCode;} public void setMemberCode(String value){memberCode=value;}
 
     public Role getRole() {
         return role;

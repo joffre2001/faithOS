@@ -37,9 +37,11 @@ public class User {
 
     @Column(length = 20)
     private String phone;
-    @Column(length = 11, unique = true) private String cpf;
-    @Column(name = "emergency_contact_name") private String emergencyContactName;
-    @Column(name = "emergency_contact_phone", length = 30) private String emergencyContactPhone;
+    @Column(length = 512) private String cpf;
+    @Column(name = "cpf_hash", length = 64) private String cpfHash;
+    @Column(name = "emergency_contact_name", length = 1024) private String emergencyContactName;
+    @Column(name = "emergency_contact_phone", length = 512) private String emergencyContactPhone;
+    @Column(name="member_code",length=50) private String memberCode;
 
     public String getPhone() {
         return phone;
@@ -50,10 +52,13 @@ public class User {
     }
     public String getCpf() { return cpf; }
     public void setCpf(String cpf) { this.cpf = cpf; }
+    public String getCpfHash() { return cpfHash; }
+    public void setCpfHash(String value) { this.cpfHash = value; }
     public String getEmergencyContactName() { return emergencyContactName; }
     public void setEmergencyContactName(String value) { this.emergencyContactName = value; }
     public String getEmergencyContactPhone() { return emergencyContactPhone; }
     public void setEmergencyContactPhone(String value) { this.emergencyContactPhone = value; }
+    public String getMemberCode(){return memberCode;} public void setMemberCode(String value){memberCode=value;}
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

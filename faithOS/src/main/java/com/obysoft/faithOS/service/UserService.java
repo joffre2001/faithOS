@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.obysoft.faithOS.dto.UserRequest;
 import com.obysoft.faithOS.dto.UserResponse;
@@ -26,17 +27,27 @@ public class UserService {
     private final ChurchRepository churchRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetService passwordResetService;
+    private final SensitiveDataService sensitiveData;
 
+    @Autowired
     public UserService(
             UserRepository userRepository,
             ChurchRepository churchRepository,
             PasswordEncoder passwordEncoder,
-            PasswordResetService passwordResetService) {
+            PasswordResetService passwordResetService,
+            SensitiveDataService sensitiveData) {
 
         this.userRepository = userRepository;
         this.churchRepository = churchRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordResetService = passwordResetService;
+        this.sensitiveData = sensitiveData;
+    }
+
+    UserService(UserRepository userRepository, ChurchRepository churchRepository,
+            PasswordEncoder passwordEncoder, PasswordResetService passwordResetService) {
+        this(userRepository, churchRepository, passwordEncoder, passwordResetService,
+                new SensitiveDataService("test-only-sensitive-data-key-32chars"));
     }
 
     public UserResponse createUser(UserRequest request) {
@@ -77,9 +88,12 @@ public class UserService {
         User user = new User();
 
         String cpf = normalizeCpf(request.getCpf());
-        if (userRepository.existsByCpf(cpf)) {
+        String cpfHash = sensitiveData.hash(cpf);
+        if (userRepository.existsByCpfHash(cpfHash)) {
             throw new DuplicateResourceException("CPF already exists.");
         }
+        String memberCode=normalizeMemberCode(request.getMemberCode());
+        if(userRepository.existsByChurchIdAndMemberCode(request.getChurchId(),memberCode))throw new DuplicateResourceException("Member ID already exists in this church.");
 
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -88,9 +102,11 @@ public class UserService {
                 passwordEncoder.encode(request.getPassword())
         );
         user.setPhone(request.getPhone());
-        user.setCpf(cpf);
-        user.setEmergencyContactName(request.getEmergencyContactName().trim());
-        user.setEmergencyContactPhone(request.getEmergencyContactPhone().trim());
+        user.setCpf(sensitiveData.encrypt(cpf));
+        user.setCpfHash(cpfHash);
+        user.setEmergencyContactName(sensitiveData.encrypt(request.getEmergencyContactName().trim()));
+        user.setEmergencyContactPhone(sensitiveData.encrypt(request.getEmergencyContactPhone().trim()));
+        user.setMemberCode(memberCode);
         user.setRole(request.getRole());
         user.setChurch(church);
         user.setMustChangePassword(true);
@@ -161,17 +177,22 @@ public class UserService {
         }
 
         String cpf = normalizeCpf(request.getCpf());
-        if (userRepository.existsByCpfAndIdNot(cpf, id)) {
+        String cpfHash = sensitiveData.hash(cpf);
+        if (userRepository.existsByCpfHashAndIdNot(cpfHash, id)) {
             throw new DuplicateResourceException("CPF already exists.");
         }
+        String memberCode=normalizeMemberCode(request.getMemberCode());
+        if(userRepository.existsByChurchIdAndMemberCodeAndIdNot(user.getChurch().getId(),memberCode,id))throw new DuplicateResourceException("Member ID already exists in this church.");
 
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
-        user.setCpf(cpf);
-        user.setEmergencyContactName(request.getEmergencyContactName().trim());
-        user.setEmergencyContactPhone(request.getEmergencyContactPhone().trim());
+        user.setCpf(sensitiveData.encrypt(cpf));
+        user.setCpfHash(cpfHash);
+        user.setEmergencyContactName(sensitiveData.encrypt(request.getEmergencyContactName().trim()));
+        user.setEmergencyContactPhone(sensitiveData.encrypt(request.getEmergencyContactPhone().trim()));
+        user.setMemberCode(memberCode);
         user.setRole(request.getRole());
 
         User updatedUser = userRepository.save(user);
@@ -270,9 +291,10 @@ public class UserService {
         response.setLastName(user.getLastName());
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
-        response.setCpf(user.getCpf());
-        response.setEmergencyContactName(user.getEmergencyContactName());
-        response.setEmergencyContactPhone(user.getEmergencyContactPhone());
+        response.setCpf(sensitiveData.decrypt(user.getCpf()));
+        response.setEmergencyContactName(sensitiveData.decrypt(user.getEmergencyContactName()));
+        response.setEmergencyContactPhone(sensitiveData.decrypt(user.getEmergencyContactPhone()));
+        response.setMemberCode(user.getMemberCode());
         response.setRole(user.getRole());
         response.setActive(user.getActive());
         response.setMustChangePassword(user.getMustChangePassword());
@@ -289,4 +311,5 @@ public class UserService {
     private String normalizeCpf(String cpf) {
         return cpf.replaceAll("\\D", "");
     }
+    private String normalizeMemberCode(String value){return value.trim().toUpperCase();}
 }
