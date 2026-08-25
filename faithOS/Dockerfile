@@ -12,7 +12,9 @@ RUN apt-get update \
 RUN useradd --system --create-home --uid 10001 faithos
 WORKDIR /app
 COPY --from=build /workspace/target/*.jar app.jar
-RUN mkdir -p /app/uploads && chown -R faithos:faithos /app
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh \
+    && mkdir -p /app/uploads && chown -R faithos:faithos /app
 USER faithos
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["/app/start.sh"]
