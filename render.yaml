@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/render-oss/render-schema/main/render.schema.json
+
+services:
+  - type: web
+    name: faithos-api
+    runtime: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./faithOS/Dockerfile
+    dockerContext: ./faithOS
+    dockerCommand: /bin/sh -c 'export DB_URL="jdbc:${DATABASE_URL}"; exec java -jar /app/app.jar'
+    healthCheckPath: /actuator/health
+    maxShutdownDelaySeconds: 30
+    autoDeployTrigger: commit
+    disk:
+      name: faithos-uploads
+      mountPath: /app/uploads
+      sizeGB: 5
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: faithos-postgres
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: faithos-postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: faithos-postgres
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATA_ENCRYPTION_KEY
+        generateValue: true
+      - key: JWT_EXPIRATION_MS
+        value: "900000"
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
+      - key: AUTH_COOKIE_SAME_SITE
+        value: None
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://app.faithos.local,capacitor://app.faithos.local
+      - key: HIBERNATE_DDL_AUTO
+        value: validate
+      - key: FILE_UPLOAD_DIR
+        value: /app/uploads
+      - key: MAX_FILE_SIZE
+        value: 10MB
+      - key: ABSENCE_RETENTION_DAYS
+        value: "365"
+      - key: MESSAGE_RETENTION_DAYS
+        value: "730"
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_AUTH
+        value: "true"
+      - key: SMTP_STARTTLS
+        value: "true"
+      - key: MAIL_FROM
+        sync: false
+      - key: SUPPORT_EMAIL
+        value: obensonjoffre3@gmail.com
+      - key: PIX_KEY
+        value: eglisedechapeco2000@gmail.com
+
+  - type: web
+    name: faithos-web
+    runtime: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./faithOS/frontend/Dockerfile
+    dockerContext: ./faithOS/frontend
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: BACKEND_HOSTPORT
+        fromService:
+          type: web
+          name: faithos-api
+          property: hostport
+    buildFilter:
+      paths:
+        - faithOS/frontend/**
+        - render.yaml
+
+databases:
+  - name: faithos-postgres
+    region: oregon
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+    databaseName: faithos
+    user: faithos
+    diskSizeGB: 15
+    storageAutoscalingEnabled: true
+    ipAllowList: []
