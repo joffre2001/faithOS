@@ -46,4 +46,21 @@ class CsrfProtectionIntegrationTest {
                         .header("X-XSRF-TOKEN", cookie.getValue()))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    void unsafeRequestWithResponseBodyTokenIsAllowed() throws Exception {
+        var csrfResponse = mockMvc.perform(get("/api/auth/csrf"))
+                .andExpect(status().isOk())
+                .andReturn();
+        Cookie cookie = csrfResponse.getResponse().getCookie("XSRF-TOKEN");
+        String token = com.fasterxml.jackson.databind.json.JsonMapper.builder().build()
+                .readTree(csrfResponse.getResponse().getContentAsString())
+                .get("token")
+                .asText();
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(cookie)
+                        .header("X-XSRF-TOKEN", token))
+                .andExpect(status().isNoContent());
+    }
 }

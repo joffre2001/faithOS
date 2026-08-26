@@ -236,11 +236,11 @@ async function getCsrfToken(): Promise<string> {
       "Unable to initialize request security. Please refresh the page."
     );
   const csrf = (await response.json()) as { token?: string };
+  if (csrf.token) return csrf.token;
   const cookie = document.cookie
     .split("; ")
     .find((value) => value.startsWith("XSRF-TOKEN="));
   if (cookie) return decodeURIComponent(cookie.substring("XSRF-TOKEN=".length));
-  if (csrf.token) return csrf.token;
   throw new Error(
     "Unable to initialize request security. Please refresh the page."
   );
