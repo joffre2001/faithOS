@@ -34,7 +34,7 @@ services:
       - key: AUTH_COOKIE_SAME_SITE
         value: None
       - key: CORS_ALLOWED_ORIGINS
-        value: https://app.faithos.local,capacitor://app.faithos.local
+        value: https://faithos-web.onrender.com,https://app.faithos.local,capacitor://app.faithos.local
       - key: HIBERNATE_DDL_AUTO
         value: validate
       - key: FILE_UPLOAD_DIR
