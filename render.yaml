@@ -64,11 +64,10 @@ services:
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
-      - key: BACKEND_HOSTPORT
-        fromService:
-          type: web
-          name: faithos-api
-          property: hostport
+      # Free web services cannot receive private-network traffic from another
+      # free web service, so proxy API requests through the public HTTPS URL.
+      - key: BACKEND_URL
+        value: https://faithos-api-kp61.onrender.com
     buildFilter:
       paths:
         - faithOS/frontend/**
