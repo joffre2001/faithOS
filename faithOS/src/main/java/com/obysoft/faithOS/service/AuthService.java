@@ -63,6 +63,19 @@ public class AuthService {
         return response;
     }
 
+    public String loginWithVerifiedGoogleEmail(String email) {
+        String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+        var user = userRepository.findByEmailIgnoreCase(normalizedEmail)
+                .filter(candidate -> Boolean.TRUE.equals(candidate.getActive()))
+                .orElseThrow(() -> new InvalidCredentialsException(
+                        "No active FaithOS account is linked to this Google email."));
+        if (Boolean.TRUE.equals(user.getMustChangePassword())) {
+            user.setMustChangePassword(false);
+            userRepository.save(user);
+        }
+        return jwtService.generateToken(user);
+    }
+
     private LoginResponse toResponse(com.obysoft.faithOS.entity.User user) {
         LoginResponse response = new LoginResponse();
         response.setId(user.getId());

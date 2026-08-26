@@ -12,6 +12,7 @@ import com.obysoft.faithOS.entity.User;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
+    Optional<User> findByEmailIgnoreCase(String email);
     Optional<User> findByIdAndChurchId(Long id, Long churchId);
     List<User> findAllByIdInAndChurchId(Collection<Long> ids, Long churchId);
 

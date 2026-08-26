@@ -238,6 +238,12 @@ function Login({
       "Kreye yon kont legliz →",
     ],
   }[language];
+  const googleText = {
+    en: ["Continue with Google", "Google sign-in failed. Please try again.", "No active FaithOS account is linked to that Google email.", "Google did not verify this email address."],
+    fr: ["Continuer avec Google", "La connexion Google a échoué. Veuillez réessayer.", "Aucun compte FaithOS actif n’est associé à cette adresse Google.", "Google n’a pas vérifié cette adresse e-mail."],
+    "pt-BR": ["Continuar com o Google", "O login com o Google falhou. Tente novamente.", "Nenhuma conta ativa do FaithOS está vinculada a esse e-mail do Google.", "O Google não verificou este endereço de e-mail."],
+    ht: ["Kontinye ak Google", "Koneksyon Google la echwe. Tanpri eseye ankò.", "Pa gen kont FaithOS aktif ki konekte ak imel Google sa a.", "Google pa t verifye adrès imel sa a."],
+  }[language];
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -264,6 +270,12 @@ function Login({
       .then((result) => setSetupAvailable(result.available))
       .catch(() => setSetupAvailable(true));
   }, []);
+  useEffect(() => {
+    const result = new URLSearchParams(window.location.search).get("oauth");
+    if (!result || result === "success") return;
+    setError(result === "account-not-linked" ? googleText[2] : result === "unverified" ? googleText[3] : googleText[1]);
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [language]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -439,6 +451,11 @@ function Login({
             <span className="eyebrow">Welcome home</span>
             <h2>Sign in to FaithOS</h2>
             <p>Continue to your church workspace.</p>
+            <a className="google-login" href="/oauth2/authorization/google">
+              <span aria-hidden="true">G</span>
+              {googleText[0]}
+            </a>
+            <div className="login-divider"><span>or</span></div>
             <label>
               Email address
               <input

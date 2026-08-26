@@ -7,6 +7,7 @@ import './data.css'
 import './setup.css'
 import './modules.css'
 import './dashboard-live.css'
+import './oauth.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><App /></React.StrictMode>,

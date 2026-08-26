@@ -14,6 +14,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,6 +25,7 @@ import java.util.List;
 
 import com.obysoft.faithOS.security.JwtAuthenticationFilter;
 import com.obysoft.faithOS.security.PasswordChangeRequiredFilter;
+import com.obysoft.faithOS.security.GoogleOAuthHandler;
 
 @Configuration
 @EnableMethodSecurity
@@ -53,13 +56,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+            ObjectProvider<ClientRegistrationRepository> clientRegistrations,
+            GoogleOAuthHandler googleOAuthHandler)
             throws Exception {
 
         CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         csrfTokenRepository.setCookieCustomizer(cookie -> cookie.secure(true));
+        boolean googleOAuthEnabled = clientRegistrations.getIfAvailable() != null;
 
-        return http
+        http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(csrfTokenRepository)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
@@ -67,12 +73,15 @@ public class SecurityConfig {
                                 "POST".equals(request.getMethod())
                                         && "/api/device/attendance/check-in".equals(request.getRequestURI())))
                 .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .sessionCreationPolicy(googleOAuthEnabled
+                        ? SessionCreationPolicy.IF_REQUIRED
+                        : SessionCreationPolicy.STATELESS)
                 )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/session", "/api/auth/change-password").authenticated()
                 .requestMatchers("/api/auth/**", "/api/setup/**", "/actuator/health").permitAll()
+                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/device/attendance/check-in").permitAll()
                 .anyRequest().authenticated()
                 )
@@ -80,8 +89,14 @@ public class SecurityConfig {
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
-                .addFilterAfter(passwordChangeRequiredFilter, JwtAuthenticationFilter.class)
-                .build();
+                .addFilterAfter(passwordChangeRequiredFilter, JwtAuthenticationFilter.class);
+
+        if (googleOAuthEnabled) {
+            http.oauth2Login(oauth -> oauth
+                    .successHandler(googleOAuthHandler)
+                    .failureHandler(googleOAuthHandler));
+        }
+        return http.build();
     }
 
     @Bean
