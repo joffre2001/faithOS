@@ -45,6 +45,10 @@ services:
         value: "365"
       - key: MESSAGE_RETENTION_DAYS
         value: "730"
+      # SMTP is unavailable on Render's free web services. Keep the overall
+      # health endpoint useful by excluding only the mail connectivity check.
+      - key: MANAGEMENT_HEALTH_MAIL_ENABLED
+        value: "false"
       - key: SUPPORT_EMAIL
         value: obensonjoffre3@gmail.com
       - key: PIX_KEY
