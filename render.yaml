@@ -61,8 +61,6 @@ services:
         value: "false"
       - key: SUPPORT_EMAIL
         value: obensonjoffre3@gmail.com
-      - key: PIX_KEY
-        value: eglisedechapeco2000@gmail.com
 
   - type: web
     name: faithos-web

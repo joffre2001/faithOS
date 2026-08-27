@@ -1,0 +1,3 @@
+ALTER TABLE churches ADD COLUMN pix_key VARCHAR(512);
+ALTER TABLE churches ADD COLUMN pix_recipient VARCHAR(25);
+ALTER TABLE churches ADD COLUMN pix_city VARCHAR(15);

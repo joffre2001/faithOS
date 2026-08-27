@@ -221,6 +221,9 @@ export type Church = {
   address: string;
   cnpj: string;
   principalPastor: string;
+  pixKey?: string;
+  pixRecipient?: string;
+  pixCity?: string;
 };
 export type ChurchPayload = Omit<Church, "id">;
 export type PixConfiguration = { key: string; recipient: string; city: string };

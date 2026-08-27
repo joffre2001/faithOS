@@ -16,9 +16,11 @@ import com.obysoft.faithOS.repository.ChurchRepository;
 public class ChurchService {
 
     private final ChurchRepository churchRepository;
+    private final SensitiveDataService sensitiveData;
 
-    public ChurchService(ChurchRepository churchRepository) {
+    public ChurchService(ChurchRepository churchRepository, SensitiveDataService sensitiveData) {
         this.churchRepository = churchRepository;
+        this.sensitiveData = sensitiveData;
     }
 
     public List<ChurchResponse> findAll() {
@@ -38,6 +40,7 @@ public class ChurchService {
         church.setAddress(request.getAddress());
         church.setCnpj(request.getCnpj());
         church.setPrincipalPastor(request.getPrincipalPastor());
+        applyPixSettings(church, request);
 
         if (churchRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new DuplicateResourceException("Email already registered.");
@@ -73,6 +76,9 @@ public class ChurchService {
         response.setAddress(church.getAddress());
         response.setCnpj(church.getCnpj());
         response.setPrincipalPastor(church.getPrincipalPastor());
+        response.setPixKey(sensitiveData.decrypt(church.getPixKey()));
+        response.setPixRecipient(church.getPixRecipient());
+        response.setPixCity(church.getPixCity());
 
         return response;
     }
@@ -112,6 +118,7 @@ public class ChurchService {
         church.setAddress(request.getAddress());
         church.setCnpj(request.getCnpj());
         church.setPrincipalPastor(request.getPrincipalPastor());
+        applyPixSettings(church, request);
 
         Church updated = churchRepository.save(church);
 
@@ -124,6 +131,17 @@ public class ChurchService {
                 .orElseThrow(() -> new ResourceNotFoundException("Church not found with id: " + id));
 
         churchRepository.delete(church);
+    }
+
+    private void applyPixSettings(Church church, ChurchRequest request) {
+        church.setPixKey(sensitiveData.encrypt(trimToNull(request.getPixKey())));
+        church.setPixRecipient(trimToNull(request.getPixRecipient()));
+        church.setPixCity(trimToNull(request.getPixCity()));
+    }
+
+    private String trimToNull(String value) {
+        if (value == null || value.isBlank()) return null;
+        return value.trim();
     }
 
 }

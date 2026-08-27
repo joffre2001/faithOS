@@ -2,6 +2,7 @@ package com.obysoft.faithOS.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class ChurchRequest {
 
@@ -23,6 +24,15 @@ public class ChurchRequest {
 
     @NotBlank(message = "Principal Pastor is required")
     private String principalPastor;
+
+    @Size(max = 200, message = "PIX key must contain at most 200 characters")
+    private String pixKey;
+
+    @Size(max = 25, message = "PIX recipient must contain at most 25 characters")
+    private String pixRecipient;
+
+    @Size(max = 15, message = "PIX city must contain at most 15 characters")
+    private String pixCity;
 
     public ChurchRequest() {
     }
@@ -74,4 +84,11 @@ public class ChurchRequest {
     public void setPrincipalPastor(String principalPastor) {
         this.principalPastor = principalPastor;
     }
+
+    public String getPixKey() { return pixKey; }
+    public void setPixKey(String pixKey) { this.pixKey = pixKey; }
+    public String getPixRecipient() { return pixRecipient; }
+    public void setPixRecipient(String pixRecipient) { this.pixRecipient = pixRecipient; }
+    public String getPixCity() { return pixCity; }
+    public void setPixCity(String pixCity) { this.pixCity = pixCity; }
 }

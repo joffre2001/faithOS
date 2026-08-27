@@ -28,6 +28,12 @@ public class Church {
     private String cnpj;
 
     private String principalPastor;
+
+    private String pixKey;
+
+    private String pixRecipient;
+
+    private String pixCity;
     
 
     @OneToMany(mappedBy = "church")
@@ -87,6 +93,18 @@ public class Church {
     public void setPrincipalPastor(String principalPastor) {
         this.principalPastor = principalPastor;
     }
+
+    public String getPixKey() { return pixKey; }
+
+    public void setPixKey(String pixKey) { this.pixKey = pixKey; }
+
+    public String getPixRecipient() { return pixRecipient; }
+
+    public void setPixRecipient(String pixRecipient) { this.pixRecipient = pixRecipient; }
+
+    public String getPixCity() { return pixCity; }
+
+    public void setPixCity(String pixCity) { this.pixCity = pixCity; }
 
     public List<User> getUsers() {
         return users;

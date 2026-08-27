@@ -1676,6 +1676,9 @@ function SettingsScreen({
           address: church.address,
           cnpj: church.cnpj,
           principalPastor: church.principalPastor,
+          pixKey: church.pixKey || "",
+          pixRecipient: church.pixRecipient || "",
+          pixCity: church.pixCity || "",
         })
       );
       setSuccess("Church profile updated successfully.");
@@ -1810,6 +1813,42 @@ function SettingsScreen({
                     value={church.principalPastor}
                     onChange={(e) =>
                       setChurch({ ...church, principalPastor: e.target.value })
+                    }
+                  />
+                </label>
+                <label className="span-2">
+                  Church PIX key
+                  <input
+                    disabled={!canEditChurch}
+                    maxLength={200}
+                    placeholder="Email, phone, CPF/CNPJ, or random PIX key"
+                    value={church.pixKey || ""}
+                    onChange={(e) =>
+                      setChurch({ ...church, pixKey: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  PIX recipient name
+                  <input
+                    disabled={!canEditChurch}
+                    maxLength={25}
+                    placeholder={church.name}
+                    value={church.pixRecipient || ""}
+                    onChange={(e) =>
+                      setChurch({ ...church, pixRecipient: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  PIX city
+                  <input
+                    disabled={!canEditChurch}
+                    maxLength={15}
+                    placeholder="CHAPECO"
+                    value={church.pixCity || ""}
+                    onChange={(e) =>
+                      setChurch({ ...church, pixCity: e.target.value.toUpperCase() })
                     }
                   />
                 </label>
