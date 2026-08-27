@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.obysoft.faithOS.entity.User;
+import com.obysoft.faithOS.entity.Role;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
@@ -17,6 +18,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findAllByIdInAndChurchId(Collection<Long> ids, Long churchId);
 
     boolean existsByEmail(String email);
+    boolean existsByRole(Role role);
     Page<User> findAllByChurchId(Long churchId, Pageable pageable);
     Page<User> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
             String firstName, String lastName, String email, Pageable pageable);
