@@ -46,7 +46,7 @@ import {
   ReportsScreen,
 } from "./ModuleScreens";
 import { CareScreen } from "./CareScreen";
-import { AdminChurches } from "./AdminChurches";
+import { SuperAdminApp } from "./SuperAdminApp";
 import { PixDonation } from "./PixDonation";
 import { LegalLinks } from "./LegalLinks";
 
@@ -2197,6 +2197,16 @@ function App() {
         setLanguage={setLanguage}
       />
     );
+  if (session.role === "SUPER_ADMIN")
+    return (
+      <SuperAdminApp
+        session={session}
+        onLogout={async () => {
+          await api.logout().catch(() => undefined);
+          setSession(null);
+        }}
+      />
+    );
   const isAdmin = ["SUPER_ADMIN", "CHURCH_ADMIN"].includes(session.role);
   return (
     <div className="app-shell">
@@ -2292,7 +2302,6 @@ function App() {
                 setLanguage={setLanguage}
               />
               <LegalLinks />
-              {session.role === "SUPER_ADMIN" && <AdminChurches />}
             </>
           ) : screen === "Help" ? (
             <HelpScreen navigate={setScreen} role={session.role} />

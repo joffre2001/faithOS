@@ -227,6 +227,44 @@ export type Church = {
 };
 export type ChurchPayload = Omit<Church, "id">;
 export type PixConfiguration = { key: string; recipient: string; city: string };
+export type SuperAdminOverview = {
+  totalChurches: number;
+  activeChurches: number;
+  totalUsers: number;
+  activeUsers: number;
+  totalMinistries: number;
+  auditEvents: number;
+};
+export type SuperAdminChurch = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  cnpj: string;
+  principalPastor: string;
+  active: boolean;
+  userCount: number;
+  administratorId?: number;
+  administratorName?: string;
+  administratorEmail?: string;
+};
+export type SuperAdminUser = {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string;
+  active: boolean;
+};
+export type SuperAdminAudit = {
+  id: number;
+  actorEmail: string;
+  action: string;
+  targetType: string;
+  targetId?: number;
+  reason: string;
+  createdAt: string;
+};
 const API_ROOT = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
 const apiUrl = (path: string) => `${API_ROOT}${path}`;
 
@@ -536,4 +574,26 @@ export const api = {
     }),
   deleteChurch: (id: number) =>
     request<void>(`/churches/${id}`, { method: "DELETE" }),
+  superAdminOverview: () =>
+    request<SuperAdminOverview>("/super-admin/overview"),
+  superAdminChurches: () =>
+    request<SuperAdminChurch[]>("/super-admin/churches"),
+  superAdminChurchUsers: (churchId: number) =>
+    request<SuperAdminUser[]>(`/super-admin/churches/${churchId}/users`),
+  setSuperAdminChurchStatus: (churchId: number, active: boolean, reason: string) =>
+    request<SuperAdminChurch>(`/super-admin/churches/${churchId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ active, reason }),
+    }),
+  assignSuperAdminChurchAdministrator: (
+    churchId: number,
+    userId: number,
+    reason: string
+  ) =>
+    request<SuperAdminChurch>(`/super-admin/churches/${churchId}/administrator`, {
+      method: "PATCH",
+      body: JSON.stringify({ userId, reason }),
+    }),
+  superAdminAuditLog: () =>
+    request<SuperAdminAudit[]>("/super-admin/audit-log"),
 };

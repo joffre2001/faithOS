@@ -34,6 +34,9 @@ public class Church {
     private String pixRecipient;
 
     private String pixCity;
+
+    @jakarta.persistence.Column(nullable = false)
+    private Boolean active = true;
     
 
     @OneToMany(mappedBy = "church")
@@ -105,6 +108,10 @@ public class Church {
     public String getPixCity() { return pixCity; }
 
     public void setPixCity(String pixCity) { this.pixCity = pixCity; }
+
+    public Boolean getActive() { return active; }
+
+    public void setActive(Boolean active) { this.active = active; }
 
     public List<User> getUsers() {
         return users;

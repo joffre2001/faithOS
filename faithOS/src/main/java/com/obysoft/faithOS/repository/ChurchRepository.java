@@ -16,4 +16,6 @@ public interface ChurchRepository extends JpaRepository<Church, Long> {
 
     boolean existsByCnpjAndIdNot(String cnpj, Long id);
 
+    long countByActiveTrue();
+
 }

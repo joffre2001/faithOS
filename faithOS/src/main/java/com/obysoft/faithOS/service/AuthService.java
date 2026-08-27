@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import com.obysoft.faithOS.dto.LoginRequest;
 import com.obysoft.faithOS.dto.LoginResponse;
+import com.obysoft.faithOS.entity.Role;
 import com.obysoft.faithOS.exception.InvalidCredentialsException;
 import com.obysoft.faithOS.repository.UserRepository;
 import com.obysoft.faithOS.security.JwtService;
@@ -38,6 +39,8 @@ public class AuthService {
             );
         }
 
+        requireActiveChurch(user);
+
         if (!passwordEncoder.matches(
                 request.getPassword(),
                 user.getPassword())) {
@@ -58,6 +61,7 @@ public class AuthService {
         var user = userRepository.findByEmail(email)
                 .filter(candidate -> Boolean.TRUE.equals(candidate.getActive()))
                 .orElseThrow(() -> new InvalidCredentialsException("Session is no longer valid."));
+        requireActiveChurch(user);
         LoginResponse response = toResponse(user);
         response.setMessage("Session active.");
         return response;
@@ -69,6 +73,7 @@ public class AuthService {
                 .filter(candidate -> Boolean.TRUE.equals(candidate.getActive()))
                 .orElseThrow(() -> new InvalidCredentialsException(
                         "No active FaithOS account is linked to this Google email."));
+        requireActiveChurch(user);
         if (Boolean.TRUE.equals(user.getMustChangePassword())) {
             user.setMustChangePassword(false);
             userRepository.save(user);
@@ -102,5 +107,12 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(false);
         userRepository.save(user);
+    }
+
+    private void requireActiveChurch(com.obysoft.faithOS.entity.User user) {
+        if (user.getRole() != Role.SUPER_ADMIN
+                && (user.getChurch() == null || !Boolean.TRUE.equals(user.getChurch().getActive()))) {
+            throw new InvalidCredentialsException("This church workspace is currently suspended.");
+        }
     }
 }

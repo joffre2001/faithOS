@@ -34,5 +34,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByChurchIdAndMemberCodeAndIdNot(Long churchId,String memberCode,Long id);
     Optional<User> findByChurchIdAndMemberCode(Long churchId,String memberCode);
     List<User> findAllByChurchIdAndActiveTrueOrderByFirstNameAsc(Long churchId);
+    List<User> findAllByChurchIdOrderByFirstNameAsc(Long churchId);
+    long countByActiveTrue();
+    long countByChurchId(Long churchId);
+    long countByChurchIdAndRole(Long churchId, Role role);
 
 }
