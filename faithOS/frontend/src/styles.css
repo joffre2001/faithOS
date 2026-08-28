@@ -33,3 +33,15 @@ img{max-width:100%;height:auto}
   .search{min-width:0}
   .search input{min-width:0}
 }
+
+/* Account menu keeps profile details and sign-out reachable on every screen size. */
+.profile-menu-wrap{position:relative;flex:0 0 auto}
+.profile-menu-scrim{position:fixed;inset:0;z-index:19;border:0;background:transparent;padding:0}
+.profile-menu{position:absolute;right:0;top:calc(100% + 12px);z-index:40;width:min(330px,calc(100vw - 24px));background:#fffdf9;border:1px solid #dfdbd2;border-radius:15px;padding:16px;box-shadow:0 22px 55px #19352d2b;color:#29443c}
+.profile-menu-header{display:grid;grid-template-columns:auto 1fr;gap:11px;align-items:center;padding-bottom:14px;border-bottom:1px solid #ebe7df;min-width:0}
+.profile-menu-header>span{width:42px;height:42px;border-radius:12px;background:#d9e4df;color:#295046;display:grid;place-items:center;font-weight:800;font-size:12px}
+.profile-menu-header>div{min-width:0}.profile-menu-header b,.profile-menu-header small{display:block;overflow-wrap:anywhere}.profile-menu-header small{font-size:10px;color:#7c8b86;margin-top:3px}
+.profile-menu-details{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}.profile-menu-details div{min-width:0;padding:10px;border-radius:9px;background:#f3f1eb}.profile-menu-details dt{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#7b8984}.profile-menu-details dd{margin:5px 0 0;font-size:12px;font-weight:700;overflow-wrap:anywhere;text-transform:capitalize}
+.profile-menu-loading{padding:20px;text-align:center;color:#7c8b86;font-size:12px}
+.profile-menu-logout{width:100%;border:1px solid #e6c7c0;background:#fff5f2;color:#9a4b40;border-radius:10px;padding:11px 13px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700}
+@media(max-width:520px){.profile-menu{position:fixed;top:68px;right:12px}.profile-menu-details{grid-template-columns:1fr 1fr}}

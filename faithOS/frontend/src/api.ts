@@ -320,6 +320,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 export const api = {
   session: () => request<Session>("/auth/session"),
+  currentUser: () => request<User>("/users/me"),
   changePassword: (currentPassword: string, newPassword: string) =>
     request<void>("/auth/change-password", {
       method: "POST",

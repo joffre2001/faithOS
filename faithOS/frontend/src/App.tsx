@@ -2125,6 +2125,9 @@ function App() {
   const [usersTotalPages, setUsersTotalPages] = useState(0);
   const [screen, setScreen] = useState<Screen>("Home");
   const [menu, setMenu] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileUser, setProfileUser] = useState<User | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [language, setLanguageState] = useState<Language>(
     () => (localStorage.getItem("faithos_language") as Language) || "pt-BR"
   );
@@ -2174,6 +2177,24 @@ function App() {
   function signedIn(next: Session) {
     localStorage.removeItem("faithos_session");
     setSession(next);
+  }
+  async function openProfile() {
+    const nextOpen = !profileOpen;
+    setProfileOpen(nextOpen);
+    if (!nextOpen || profileUser || profileLoading) return;
+    setProfileLoading(true);
+    try {
+      setProfileUser(await api.currentUser());
+    } catch {
+      setProfileUser(null);
+    } finally {
+      setProfileLoading(false);
+    }
+  }
+  async function signOut() {
+    setProfileOpen(false);
+    await api.logout().catch(() => undefined);
+    setSession(null);
   }
   usePageTranslation(language, screen);
   if (sessionLoading)
@@ -2234,31 +2255,59 @@ function App() {
               <Bell size={19} />
               <i />
             </button>
-            <button className="profile">
-              <span>
-                {session.fullName
-                  .split(" ")
-                  .slice(0, 2)
-                  .map((name) => name[0])
-                  .join("")
-                  .toUpperCase()}
-              </span>
-              <div>
-                <b>{session.fullName}</b>
-                <small>{session.role.replaceAll("_", " ").toLowerCase()}</small>
-              </div>
-              <ChevronDown size={16} />
-            </button>
-            <button
-              className="logout"
-              title="Sign out"
-              onClick={async () => {
-                await api.logout().catch(() => undefined);
-                setSession(null);
-              }}
-            >
-              <LogOut size={18} />
-            </button>
+            <div className="profile-menu-wrap">
+              <button
+                className="profile"
+                onClick={() => void openProfile()}
+                aria-expanded={profileOpen}
+                aria-haspopup="dialog"
+                title="Open profile"
+              >
+                <span>
+                  {session.fullName
+                    .split(" ")
+                    .slice(0, 2)
+                    .map((name) => name[0])
+                    .join("")
+                    .toUpperCase()}
+                </span>
+                <div>
+                  <b>{session.fullName}</b>
+                  <small>{session.role.replaceAll("_", " ").toLowerCase()}</small>
+                </div>
+                <ChevronDown size={16} />
+              </button>
+              {profileOpen && (
+                <>
+                  <button
+                    className="profile-menu-scrim"
+                    aria-label="Close profile"
+                    onClick={() => setProfileOpen(false)}
+                  />
+                  <section className="profile-menu" role="dialog" aria-label="My profile">
+                    <div className="profile-menu-header">
+                      <span>
+                        {session.fullName.split(" ").slice(0, 2).map((name) => name[0]).join("").toUpperCase()}
+                      </span>
+                      <div><b>{session.fullName}</b><small>{session.email}</small></div>
+                    </div>
+                    {profileLoading ? (
+                      <p className="profile-menu-loading">Loading profile…</p>
+                    ) : (
+                      <dl className="profile-menu-details">
+                        <div><dt>Role</dt><dd>{session.role.replaceAll("_", " ")}</dd></div>
+                        <div><dt>Church</dt><dd>{session.churchName || "Not assigned"}</dd></div>
+                        {profileUser?.memberCode && <div><dt>Member ID</dt><dd>{profileUser.memberCode}</dd></div>}
+                        {profileUser?.phone && <div><dt>Phone</dt><dd>{profileUser.phone}</dd></div>}
+                      </dl>
+                    )}
+                    <button className="profile-menu-logout" onClick={() => void signOut()}>
+                      <LogOut size={17}/>Sign out
+                    </button>
+                  </section>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <div className="content">
