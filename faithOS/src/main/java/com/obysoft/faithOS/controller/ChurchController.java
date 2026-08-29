@@ -107,4 +107,21 @@ public class ChurchController {
                 .header("X-Content-Type-Options", "nosniff")
                 .body(image.resource());
     }
+
+    @PostMapping(value = "/{id}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void uploadChurchLogo(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        mediaImageService.saveChurchLogo(id, file);
+    }
+
+    @GetMapping("/{id}/logo")
+    public ResponseEntity<org.springframework.core.io.Resource> churchLogo(@PathVariable Long id) {
+        var image = mediaImageService.churchLogo(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(image.contentType()))
+                .header(HttpHeaders.CACHE_CONTROL, "private, max-age=300")
+                .header("X-Content-Type-Options", "nosniff")
+                .body(image.resource());
+    }
 }

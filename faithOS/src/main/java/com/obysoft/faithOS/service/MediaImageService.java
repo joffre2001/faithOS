@@ -49,9 +49,35 @@ public class MediaImageService {
         churches.save(church);
     }
 
+    @Transactional
+    public void saveChurchLogo(Long churchId, MultipartFile upload) {
+        User actor = current.user();
+        if (actor.getRole() != Role.SUPER_ADMIN) {
+            throw new AccessDeniedException("Only a super administrator can change another church's logo.");
+        }
+        Church church = churches.findById(churchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Church not found."));
+        StoredImage image = store(upload);
+        church.setLogoData(image.data());
+        church.setLogoContentType(image.contentType());
+        churches.save(church);
+    }
+
     @Transactional(readOnly = true)
     public FileDownload churchLogo() {
         Church church = current.church();
+        return load(church.getLogoData(), church.getLogoContentType(), "church-logo");
+    }
+
+    @Transactional(readOnly = true)
+    public FileDownload churchLogo(Long churchId) {
+        User actor = current.user();
+        Church church = churches.findById(churchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Church not found."));
+        if (actor.getRole() != Role.SUPER_ADMIN
+                && !actor.getChurch().getId().equals(church.getId())) {
+            throw new AccessDeniedException("You cannot view this church logo.");
+        }
         return load(church.getLogoData(), church.getLogoContentType(), "church-logo");
     }
 

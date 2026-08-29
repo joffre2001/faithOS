@@ -30,6 +30,7 @@ type Action =
   | { kind: "status"; church: SuperAdminChurch }
   | { kind: "administrator"; church: SuperAdminChurch }
   | { kind: "create" }
+  | { kind: "members"; church: SuperAdminChurch }
   | null;
 
 const emptyChurch: ChurchPayload = {
@@ -56,6 +57,8 @@ export function SuperAdminApp({ session, onLogout }: { session: Session; onLogou
   const [reason, setReason] = useState("");
   const [churchForm, setChurchForm] = useState<ChurchPayload>(emptyChurch);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
   async function load() {
     setLoading(true);
@@ -100,6 +103,41 @@ export function SuperAdminApp({ session, onLogout }: { session: Session; onLogou
     }
   }
 
+  async function openMembers(church: SuperAdminChurch) {
+    setError("");
+    setNotice("");
+    try {
+      setUsers(await api.superAdminChurchUsers(church.id));
+      setAction({ kind: "members", church });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to load church members.");
+    }
+  }
+
+  async function uploadLogo(church: SuperAdminChurch, file: File | undefined) {
+    if (!file) return;
+    setUploading(`church-${church.id}`);
+    setError("");
+    try {
+      await api.uploadChurchLogoFor(church.id, file);
+      setNotice(`${church.name} logo updated successfully.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to upload church logo.");
+    } finally { setUploading(null); }
+  }
+
+  async function uploadMemberPicture(user: SuperAdminUser, file: File | undefined) {
+    if (!file) return;
+    setUploading(`user-${user.id}`);
+    setError("");
+    try {
+      await api.uploadProfilePicture(user.id, file);
+      setNotice(`${user.fullName}'s profile picture was updated.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to upload profile picture.");
+    } finally { setUploading(null); }
+  }
+
   async function submitAction(event: React.FormEvent) {
     event.preventDefault();
     if (!action) return;
@@ -112,8 +150,10 @@ export function SuperAdminApp({ session, onLogout }: { session: Session; onLogou
         await api.assignSuperAdminChurchAdministrator(
           action.church.id, Number(selectedUser), reason
         );
-      } else {
+      } else if (action.kind === "create") {
         await api.createChurch(churchForm);
+      } else {
+        return;
       }
       setAction(null);
       setReason("");
@@ -152,6 +192,7 @@ export function SuperAdminApp({ session, onLogout }: { session: Session; onLogou
 
         <div className="sa-content">
           {error && <div className="sa-alert">{error}<button onClick={() => setError("")}><X/></button></div>}
+          {notice && <div className="sa-alert sa-success">{notice}<button onClick={() => setNotice("")}><X/></button></div>}
           {loading && !overview ? <div className="sa-loading">Loading the platform console…</div> : null}
 
           {view === "overview" && overview && (
@@ -179,7 +220,15 @@ export function SuperAdminApp({ session, onLogout }: { session: Session; onLogou
                   <article key={church.id} className={!church.active ? "suspended" : ""}>
                     <div className="sa-church-head"><span>{church.name.slice(0, 2).toUpperCase()}</span><div><b>{church.name}</b><small>{church.email}</small></div><i className={church.active ? "active" : ""}>{church.active ? "Active" : "Suspended"}</i></div>
                     <dl><div><dt>Members</dt><dd>{church.userCount}</dd></div><div><dt>CNPJ</dt><dd>{church.cnpj}</dd></div><div className="wide"><dt>Church administrator</dt><dd>{church.administratorName || "Not assigned"}</dd><small>{church.administratorEmail}</small></div></dl>
-                    <div className="sa-card-actions"><button onClick={() => void openAdministrator(church)}><UserCog/>Assign administrator</button><button className={church.active ? "warning" : "success"} onClick={() => { setReason(""); setAction({ kind: "status", church }); }}>{church.active ? "Suspend" : "Reactivate"}</button></div>
+                    <div className="sa-card-actions">
+                      <button onClick={() => void openAdministrator(church)}><UserCog/>Assign administrator</button>
+                      <button onClick={() => void openMembers(church)}><Users/>Member pictures</button>
+                      <label className={uploading === `church-${church.id}` ? "disabled" : ""}>
+                        {uploading === `church-${church.id}` ? "Uploading…" : "Upload logo"}
+                        <input type="file" accept="image/png,image/jpeg" disabled={uploading !== null} onChange={(event) => void uploadLogo(church, event.target.files?.[0])}/>
+                      </label>
+                      <button className={church.active ? "warning" : "success"} onClick={() => { setReason(""); setAction({ kind: "status", church }); }}>{church.active ? "Suspend" : "Reactivate"}</button>
+                    </div>
                   </article>
                 ))}
               </section>
@@ -198,11 +247,12 @@ export function SuperAdminApp({ session, onLogout }: { session: Session; onLogou
       {action && (
         <div className="sa-modal-backdrop" onMouseDown={() => setAction(null)}>
           <form className="sa-modal" onSubmit={submitAction} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="sa-modal-title"><div><span>PROTECTED ACTION</span><h2>{action.kind === "status" ? `${action.church.active ? "Suspend" : "Reactivate"} church` : action.kind === "administrator" ? "Assign church administrator" : "Create church workspace"}</h2></div><button type="button" onClick={() => setAction(null)}><X/></button></div>
+            <div className="sa-modal-title"><div><span>PROTECTED ACTION</span><h2>{action.kind === "status" ? `${action.church.active ? "Suspend" : "Reactivate"} church` : action.kind === "administrator" ? "Assign church administrator" : action.kind === "members" ? `${action.church.name} member pictures` : "Create church workspace"}</h2></div><button type="button" onClick={() => setAction(null)}><X/></button></div>
             {action.kind === "status" && <p>This will {action.church.active ? "block all church accounts while preserving their data" : "restore access to active church accounts"} for <b>{action.church.name}</b>.</p>}
             {action.kind === "administrator" && <label>New administrator<select required value={selectedUser} onChange={(event) => setSelectedUser(event.target.value)}><option value="">Select an active church member</option>{users.map((user) => <option key={user.id} value={user.id} disabled={!user.active}>{user.fullName} · {user.role.replaceAll("_", " ")}{!user.active ? " · inactive" : ""}</option>)}</select></label>}
-            {action.kind === "create" ? <ChurchFields value={churchForm} change={setChurchForm}/> : <label>Reason<textarea required maxLength={500} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Explain why this administrative action is necessary"/></label>}
-            <div className="sa-modal-actions"><button type="button" onClick={() => setAction(null)}>Cancel</button><button className="primary-action" disabled={saving}>{saving ? "Saving…" : "Confirm action"}</button></div>
+            {action.kind === "members" && <div className="sa-member-pictures">{users.map((user) => <div key={user.id}><span>{user.fullName.split(" ").map((part) => part[0]).slice(0,2).join("")}</span><div><b>{user.fullName}</b><small>{user.email} · {user.role.replaceAll("_", " ")}</small></div><label className={uploading === `user-${user.id}` ? "disabled" : ""}>{uploading === `user-${user.id}` ? "Uploading…" : "Choose picture"}<input type="file" accept="image/png,image/jpeg" disabled={uploading !== null} onChange={(event) => void uploadMemberPicture(user, event.target.files?.[0])}/></label></div>)}</div>}
+            {action.kind === "create" ? <ChurchFields value={churchForm} change={setChurchForm}/> : action.kind !== "members" && <label>Reason<textarea required maxLength={500} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Explain why this administrative action is necessary"/></label>}
+            <div className="sa-modal-actions"><button type="button" onClick={() => setAction(null)}>{action.kind === "members" ? "Close" : "Cancel"}</button>{action.kind !== "members" && <button className="primary-action" disabled={saving}>{saving ? "Saving…" : "Confirm action"}</button>}</div>
           </form>
         </div>
       )}

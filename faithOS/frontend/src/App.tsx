@@ -1050,6 +1050,9 @@ function People({
   const [formError, setFormError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const [photoVersion, setPhotoVersion] = useState(0);
   const [form, setForm] = useState({
     memberCode: "",
     firstName: "",
@@ -1144,6 +1147,22 @@ function People({
       );
     } finally {
       setSaving(false);
+    }
+  }
+  async function uploadSelectedProfilePicture(file?: File) {
+    if (!selected || !file) return;
+    setPhotoUploading(true);
+    setPhotoError("");
+    try {
+      await api.uploadProfilePicture(selected.id, file);
+      setSelected({ ...selected, profilePictureUrl: `/api/users/${selected.id}/profile-picture` });
+      setPhotoVersion(Date.now());
+      setActionMessage(`Profile picture updated for ${selected.firstName}.`);
+      await refresh();
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Unable to upload the profile picture.");
+    } finally {
+      setPhotoUploading(false);
     }
   }
   async function toggle(user: User) {
@@ -1481,6 +1500,39 @@ function People({
                 <X />
               </button>
             </div>
+            <div className="member-photo-editor">
+              <span className="member-photo-preview">
+                {selected.profilePictureUrl ? (
+                  <img
+                    src={api.profilePicture(selected.id, photoVersion)}
+                    alt={`${selected.firstName} ${selected.lastName}`}
+                  />
+                ) : (
+                  `${selected.firstName[0] ?? ""}${selected.lastName[0] ?? ""}`
+                )}
+              </span>
+              <div>
+                <b>Profile picture</b>
+                <small>PNG or JPEG, up to 2 MB</small>
+                <label className="secondary member-photo-button">
+                  {photoUploading
+                    ? "Uploading…"
+                    : selected.profilePictureUrl
+                      ? "Change photo"
+                      : "Upload photo"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    disabled={photoUploading}
+                    onChange={(event) => {
+                      void uploadSelectedProfilePicture(event.target.files?.[0]);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+            {photoError && <div className="form-error">{photoError}</div>}
             <dl className="profile-details">
               <div>
                 <dt>Member ID</dt>
