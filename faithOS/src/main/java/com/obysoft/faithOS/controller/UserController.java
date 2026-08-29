@@ -4,6 +4,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.obysoft.faithOS.dto.PageResponse;
 import com.obysoft.faithOS.dto.UserRequest;
@@ -22,6 +25,7 @@ import com.obysoft.faithOS.dto.UserResponse;
 import com.obysoft.faithOS.dto.UserStatusRequest;
 import com.obysoft.faithOS.dto.UserUpdateRequest;
 import com.obysoft.faithOS.service.UserService;
+import com.obysoft.faithOS.service.MediaImageService;
 
 import jakarta.validation.Valid;
 
@@ -31,9 +35,11 @@ import jakarta.validation.Valid;
 public class UserController {
 
     private final UserService userService;
+    private final MediaImageService mediaImageService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, MediaImageService mediaImageService) {
         this.userService = userService;
+        this.mediaImageService = mediaImageService;
     }
 
     @PostMapping
@@ -102,5 +108,21 @@ public class UserController {
     public ResponseEntity<Void> sendInvitation(@PathVariable Long id) {
         userService.sendInvitation(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/{id}/profile-picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void uploadProfilePicture(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        mediaImageService.saveProfilePicture(id, file);
+    }
+
+    @GetMapping("/{id}/profile-picture")
+    public ResponseEntity<org.springframework.core.io.Resource> profilePicture(@PathVariable Long id) {
+        var image = mediaImageService.profilePicture(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(image.contentType()))
+                .header(HttpHeaders.CACHE_CONTROL, "private, max-age=300")
+                .header("X-Content-Type-Options", "nosniff")
+                .body(image.resource());
     }
 }

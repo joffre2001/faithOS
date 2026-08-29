@@ -79,6 +79,7 @@ public class ChurchService {
         response.setPixKey(sensitiveData.decrypt(church.getPixKey()));
         response.setPixRecipient(church.getPixRecipient());
         response.setPixCity(church.getPixCity());
+        if (church.getLogoData() != null) response.setLogoUrl("/api/churches/current/logo");
 
         return response;
     }

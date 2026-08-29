@@ -298,6 +298,9 @@ public class UserService {
         response.setRole(user.getRole());
         response.setActive(user.getActive());
         response.setMustChangePassword(user.getMustChangePassword());
+        if (user.getProfilePictureData() != null) {
+            response.setProfilePictureUrl("/api/users/" + user.getId() + "/profile-picture");
+        }
 
         if (user.getChurch() != null) {
             response.setChurchName(

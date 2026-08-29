@@ -42,6 +42,8 @@ public class User {
     @Column(name = "emergency_contact_name", length = 1024) private String emergencyContactName;
     @Column(name = "emergency_contact_phone", length = 512) private String emergencyContactPhone;
     @Column(name="member_code",length=50) private String memberCode;
+    @Column(name="profile_picture_data", columnDefinition="bytea") private byte[] profilePictureData;
+    @Column(name="profile_picture_content_type",length=50) private String profilePictureContentType;
 
     public String getPhone() {
         return phone;
@@ -59,6 +61,10 @@ public class User {
     public String getEmergencyContactPhone() { return emergencyContactPhone; }
     public void setEmergencyContactPhone(String value) { this.emergencyContactPhone = value; }
     public String getMemberCode(){return memberCode;} public void setMemberCode(String value){memberCode=value;}
+    public byte[] getProfilePictureData(){return profilePictureData;}
+    public void setProfilePictureData(byte[] value){profilePictureData=value;}
+    public String getProfilePictureContentType(){return profilePictureContentType;}
+    public void setProfilePictureContentType(String value){profilePictureContentType=value;}
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

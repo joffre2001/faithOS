@@ -17,6 +17,7 @@ public class UserResponse {
     private Boolean active;
     private String churchName;
     private Boolean mustChangePassword;
+    private String profilePictureUrl;
 
     public UserResponse() {
     }
@@ -94,4 +95,6 @@ public class UserResponse {
 
     public Boolean getMustChangePassword() { return mustChangePassword; }
     public void setMustChangePassword(Boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+    public void setProfilePictureUrl(String value) { this.profilePictureUrl = value; }
 }

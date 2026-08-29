@@ -6,6 +6,7 @@ export type Session = {
   churchId?: number;
   churchName?: string;
   mustChangePassword?: boolean;
+  profilePictureUrl?: string;
 };
 export type User = {
   id: number;
@@ -21,6 +22,7 @@ export type User = {
   active: boolean;
   churchName?: string;
   mustChangePassword?: boolean;
+  profilePictureUrl?: string;
 };
 export type PageResponse<T> = {
   content: T[];
@@ -224,8 +226,9 @@ export type Church = {
   pixKey?: string;
   pixRecipient?: string;
   pixCity?: string;
+  logoUrl?: string;
 };
-export type ChurchPayload = Omit<Church, "id">;
+export type ChurchPayload = Omit<Church, "id" | "logoUrl">;
 export type PixConfiguration = { key: string; recipient: string; city: string };
 export type SuperAdminOverview = {
   totalChurches: number;
@@ -316,6 +319,24 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   if (response.status === 204) return undefined as T;
   return response.json();
+}
+
+async function uploadImage(path: string, file: File): Promise<void> {
+  const body = new FormData();
+  body.append("file", file);
+  const execute = async () => fetch(apiUrl(path), {
+    method: "POST",
+    credentials: "include",
+    headers: { "X-XSRF-TOKEN": await getCsrfToken() },
+    body,
+  });
+  let response = await execute();
+  if (response.status === 403) response = await execute();
+  if (!response.ok) {
+    if (response.status === 401) window.dispatchEvent(new Event("faithos:session-expired"));
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message ?? "Unable to upload image.");
+  }
 }
 
 export const api = {
@@ -562,6 +583,10 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(value),
     }),
+  uploadChurchLogo: (file: File) => uploadImage("/churches/current/logo", file),
+  churchLogo: (version?: number) => apiUrl(`/churches/current/logo${version ? `?v=${version}` : ""}`),
+  uploadProfilePicture: (id: number, file: File) => uploadImage(`/users/${id}/profile-picture`, file),
+  profilePicture: (id: number, version?: number) => apiUrl(`/users/${id}/profile-picture${version ? `?v=${version}` : ""}`),
   churches: () => request<Church[]>("/churches"),
   createChurch: (value: ChurchPayload) =>
     request<Church>("/churches", {

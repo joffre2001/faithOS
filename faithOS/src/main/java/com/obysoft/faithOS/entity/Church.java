@@ -35,6 +35,12 @@ public class Church {
 
     private String pixCity;
 
+    @jakarta.persistence.Column(name = "logo_data", columnDefinition = "bytea")
+    private byte[] logoData;
+
+    @jakarta.persistence.Column(name = "logo_content_type", length = 50)
+    private String logoContentType;
+
     @jakarta.persistence.Column(nullable = false)
     private Boolean active = true;
     
@@ -108,6 +114,11 @@ public class Church {
     public String getPixCity() { return pixCity; }
 
     public void setPixCity(String pixCity) { this.pixCity = pixCity; }
+
+    public byte[] getLogoData() { return logoData; }
+    public void setLogoData(byte[] value) { this.logoData = value; }
+    public String getLogoContentType() { return logoContentType; }
+    public void setLogoContentType(String value) { this.logoContentType = value; }
 
     public Boolean getActive() { return active; }
 

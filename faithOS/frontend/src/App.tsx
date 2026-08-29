@@ -700,6 +700,7 @@ function Sidebar({
   close,
   churchName,
   role,
+  logoVersion,
 }: {
   screen: Screen;
   setScreen: (s: Screen) => void;
@@ -707,6 +708,7 @@ function Sidebar({
   close: () => void;
   churchName?: string;
   role: string;
+  logoVersion: number | null;
 }) {
   const isAdmin = ["SUPER_ADMIN", "CHURCH_ADMIN"].includes(role);
   const visibleNav = nav.filter(
@@ -723,7 +725,9 @@ function Sidebar({
         </div>
         <button className="church-switch">
           <span className="church-avatar">
-            {(churchName || "FaithOS")
+            {logoVersion ? (
+              <img src={api.churchLogo(logoVersion)} alt="" />
+            ) : (churchName || "FaithOS")
               .split(" ")
               .slice(0, 2)
               .map((word) => word[0])
@@ -1045,6 +1049,7 @@ function People({
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [form, setForm] = useState({
     memberCode: "",
     firstName: "",
@@ -1073,6 +1078,7 @@ function People({
     setEditing(null);
     setForm(emptyForm);
     setFormError("");
+    setProfilePicture(null);
     setShowForm(true);
   }
   function editPerson(user: User) {
@@ -1090,12 +1096,14 @@ function People({
       role: user.role,
     });
     setFormError("");
+    setProfilePicture(null);
     setShowForm(true);
   }
   function closeForm() {
     setShowForm(false);
     setEditing(null);
     setFormError("");
+    setProfilePicture(null);
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -1110,8 +1118,9 @@ function People({
     setSaving(true);
     setFormError("");
     try {
+      let saved: User;
       if (editing) {
-        await api.updateUser(editing.id, {
+        saved = await api.updateUser(editing.id, {
           memberCode: form.memberCode,
           firstName: form.firstName,
           lastName: form.lastName,
@@ -1123,8 +1132,9 @@ function People({
           role: form.role,
         });
       } else {
-        await api.createUser({ ...form, churchId: session.churchId! });
+        saved = await api.createUser({ ...form, churchId: session.churchId! });
       }
+      if (profilePicture) await api.uploadProfilePicture(saved.id, profilePicture);
       closeForm();
       setForm(emptyForm);
       await refresh();
@@ -1224,7 +1234,9 @@ function People({
                         colors[index % colors.length]
                       }`}
                     >
-                      {initials}
+                      {user.profilePictureUrl ? (
+                        <img src={api.profilePicture(user.id)} alt="" />
+                      ) : initials}
                     </span>
                     <div>
                       <b>
@@ -1320,6 +1332,16 @@ function People({
               </button>
             </div>
             <div className="form-grid">
+              <label className="span-2 image-upload-field">
+                Profile picture
+                <span>PNG or JPEG, up to 2 MB</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={(e) => setProfilePicture(e.target.files?.[0] ?? null)}
+                />
+                {profilePicture && <small>{profilePicture.name}</small>}
+              </label>
               <label className="span-2">
                 Member ID
                 <input required maxLength={50} value={form.memberCode} onChange={(e) => setForm({ ...form, memberCode: e.target.value.toUpperCase() })} placeholder="Example: M-001" />
@@ -1628,6 +1650,8 @@ function SettingsScreen({
   const [church, setChurch] = useState<Church | null>(null);
   const [churchError, setChurchError] = useState("");
   const [churchSaving, setChurchSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoVersion, setLogoVersion] = useState(0);
   useEffect(() => {
     if (!session.churchId) return;
     api
@@ -1690,6 +1714,22 @@ function SettingsScreen({
       setChurchSaving(false);
     }
   }
+  async function uploadLogo(file: File | undefined) {
+    if (!file) return;
+    setLogoUploading(true);
+    setChurchError("");
+    try {
+      await api.uploadChurchLogo(file);
+      setChurch(await api.currentChurch());
+      setLogoVersion(Date.now());
+      window.dispatchEvent(new Event("faithos:church-logo-updated"));
+      setSuccess("Church logo updated successfully.");
+    } catch (err) {
+      setChurchError(err instanceof Error ? err.message : "Unable to upload church logo.");
+    } finally {
+      setLogoUploading(false);
+    }
+  }
   const canEditChurch = session.role === "CHURCH_ADMIN";
   return (
     <>
@@ -1748,6 +1788,30 @@ function SettingsScreen({
                   ? "Keep your church contact and registration details current."
                   : "Church profile details are managed by an administrator."}
               </p>
+              <div className="church-logo-editor">
+                <div className="church-logo-preview">
+                  {church.logoUrl ? (
+                    <img src={api.churchLogo(logoVersion)} alt={`${church.name} logo`} />
+                  ) : (
+                    <HeartHandshake />
+                  )}
+                </div>
+                <div>
+                  <b>Church logo</b>
+                  <span>PNG or JPEG, up to 2 MB</span>
+                  {canEditChurch && (
+                    <label className={`secondary image-upload-button ${logoUploading ? "disabled" : ""}`}>
+                      {logoUploading ? "Uploading…" : "Choose logo"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg"
+                        disabled={logoUploading}
+                        onChange={(e) => void uploadLogo(e.target.files?.[0])}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
               <div className="form-grid">
                 <label className="span-2">
                   Church name
@@ -2128,6 +2192,7 @@ function App() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [churchLogoVersion, setChurchLogoVersion] = useState<number | null>(null);
   const [language, setLanguageState] = useState<Language>(
     () => (localStorage.getItem("faithos_language") as Language) || "pt-BR"
   );
@@ -2148,6 +2213,20 @@ function App() {
       .finally(() => setSessionLoading(false));
     return () => window.removeEventListener("faithos:session-expired", expire);
   }, []);
+  useEffect(() => {
+    if (!session?.churchId) {
+      setChurchLogoVersion(null);
+      return;
+    }
+    const refreshLogo = () => {
+      api.currentChurch()
+        .then((church) => setChurchLogoVersion(church.logoUrl ? Date.now() : null))
+        .catch(() => setChurchLogoVersion(null));
+    };
+    refreshLogo();
+    window.addEventListener("faithos:church-logo-updated", refreshLogo);
+    return () => window.removeEventListener("faithos:church-logo-updated", refreshLogo);
+  }, [session?.churchId]);
   async function refreshUsers() {
     if (!session || !["SUPER_ADMIN", "CHURCH_ADMIN"].includes(session.role))
       return;
@@ -2238,6 +2317,7 @@ function App() {
         close={() => setMenu(false)}
         churchName={session.churchName}
         role={session.role}
+        logoVersion={churchLogoVersion}
       />
       <main className="main">
         <div className="topbar">
@@ -2264,7 +2344,9 @@ function App() {
                 title="Open profile"
               >
                 <span>
-                  {session.fullName
+                  {profileUser?.profilePictureUrl ? (
+                    <img src={api.profilePicture(profileUser.id)} alt="" />
+                  ) : session.fullName
                     .split(" ")
                     .slice(0, 2)
                     .map((name) => name[0])
@@ -2287,7 +2369,9 @@ function App() {
                   <section className="profile-menu" role="dialog" aria-label="My profile">
                     <div className="profile-menu-header">
                       <span>
-                        {session.fullName.split(" ").slice(0, 2).map((name) => name[0]).join("").toUpperCase()}
+                        {profileUser?.profilePictureUrl ? (
+                          <img src={api.profilePicture(profileUser.id)} alt="" />
+                        ) : session.fullName.split(" ").slice(0, 2).map((name) => name[0]).join("").toUpperCase()}
                       </span>
                       <div><b>{session.fullName}</b><small>{session.email}</small></div>
                     </div>

@@ -14,6 +14,7 @@ public class ChurchResponse {
     private String pixKey;
     private String pixRecipient;
     private String pixCity;
+    private String logoUrl;
 
     public ChurchResponse() {
     }
@@ -80,5 +81,7 @@ public class ChurchResponse {
     public void setPixRecipient(String pixRecipient) { this.pixRecipient = pixRecipient; }
     public String getPixCity() { return pixCity; }
     public void setPixCity(String pixCity) { this.pixCity = pixCity; }
+    public String getLogoUrl() { return logoUrl; }
+    public void setLogoUrl(String value) { this.logoUrl = value; }
 
 }
